@@ -60,8 +60,6 @@ This means:
 
 ## 3. MonoPLC Detailed Architecture Implementation
 
-## 3. MonoPLC Detailed Architecture Implementation
-
 ### 3.1 Data Definitions and the Identity Element (The Types & Identity)
 
 First, we define a single `DUT_Effect` structure, which is purely declarative data, not an executable imperative action.
