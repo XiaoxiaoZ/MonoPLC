@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="Control_LOOP" Id="{5f40ff20-e9a3-4c62-9625-a0cac8de4d78}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM Control_LOOP
+VAR
+	Inst_Logic     : FB_SimpleLogic;       // 纯净的核心业务逻辑
+	
+	// --- 事件总线 (The Event Bus) ---
+	// 本地循环队列，大小 200，足以容纳单周期内爆发的所有事件
+	Event_Bus_Queue : ARRAY[0..199] OF DUT_Effect;
+	Q_Head          : INT := 0;
+	Q_Tail          : INT := 0;
+	Next_Head       : INT;
+	
+	Current_Event   : DUT_Effect;
+	Next_Async_Head : INT;
+	
+	i              : INT;
+	Total_Monoid   : DUT_Effect_Monoid;
+	Temp_Monoid    : DUT_Effect_Monoid;
+	
+	// 时间戳生成相关
+	Sys_FileTime   : T_FILETIME;
+	Current_Time_Str_Val : STRING[32];
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// ==========================================
+// 1. 采集环境事件 (Extract from external boundaries)
+// ==========================================
+// A. 将异步队列里的按键/外部网络命令，抽入本地事件总线
+WHILE gvl.Async_Input_Head <> gvl.Async_Input_Tail DO
+	Next_Head := (Q_Head + 1) MOD 200;
+	IF Next_Head <> Q_Tail THEN
+		Event_Bus_Queue[Q_Head] := gvl.Async_Input_Queue[gvl.Async_Input_Tail];
+		Q_Head := Next_Head;
+	END_IF
+	gvl.Async_Input_Tail := (gvl.Async_Input_Tail + 1) MOD 100;
+END_WHILE;
+
+// B. 生成这一毫秒的“环境滴答”事件 (The System Tick)
+Next_Head := (Q_Head + 1) MOD 200;
+IF Next_Head <> Q_Tail THEN
+	Temp_Monoid := FC_TickInputEffect('System_Timer');
+	Event_Bus_Queue[Q_Head] := Temp_Monoid.Effects[1];
+	Q_Head := Next_Head;
+END_IF
+
+// ==========================================
+// 2. 准备纯函数入参 (Prepare Immutable Data)
+// ==========================================
+Sys_FileTime.dwLowDateTime := UDINT_TO_DWORD(ULINT_TO_UDINT(GVL.System_Time_UINT));
+Sys_FileTime.dwHighDateTime := UDINT_TO_DWORD(ULINT_TO_UDINT(SHR(GVL.System_Time_UINT, 32)));
+Current_Time_Str_Val := SYSTEMTIME_TO_STRING(FILETIME_TO_SYSTEMTIME(Sys_FileTime));
+
+// ==========================================
+// 3. 终极大一统：神圣抽象事件循环 (The Grand Event Loop)
+// ==========================================
+// 只要消息总线里还有事件，就一直弹出来处理！
+WHILE Q_Tail <> Q_Head DO
+	// Pop One Event
+	Current_Event := Event_Bus_Queue[Q_Tail];
+	Q_Tail := (Q_Tail + 1) MOD 200;
+	
+	// --- 事件路由 (The Router/Dispatcher) ---
+	IF Current_Event.EType = EFF_VALVE_CTRL THEN
+		// 路由类型 1：[物理输出指令] -> 硬件映射
+		IF Current_Event.Target = 'CoolingValve' THEN
+			GVL.Net_ValveCmd := (Current_Event.Value > 0.5);
+		END_IF;
+		
+	ELSIF Current_Event.EType = EFF_IOT_PUB OR Current_Event.EType = EFF_ALARM THEN
+		// 路由类型 2：[跨任务异步指令] -> 发送至 Task B
+		Next_Async_Head := (gvl.Async_Queue_Head + 1) MOD 100;
+		IF Next_Async_Head <> gvl.Async_Queue_Tail THEN
+			gvl.Async_Effect_Queue[gvl.Async_Queue_Head] := Current_Event;
+			gvl.Async_Queue_Head := Next_Async_Head;
+		END_IF
+		
+	ELSIF Current_Event.EType = EFF_SYSTEM_TICK OR 
+		  Current_Event.EType = EFF_IOT_CMD_START OR 
+		  Current_Event.EType = EFF_IOT_CMD_STOP OR 
+		  Current_Event.EType = EFF_IOT_CMD_RESET THEN
+		// 路由类型 3：[业务逻辑激励源] -> 送入纯函数大脑
+		// 不管是按键被按下了，还是只是这一毫秒的时间流逝了，全都丢给它去算！
+		Inst_Logic(
+			Current_Temp := GVL.Net_Temperature,
+			Current_Time_Str := Current_Time_Str_Val,
+			Input_Event := Current_Event // <--- 每次只喂一粒单颗的红药丸
+		);
+		
+		// 收获果实
+		Total_Monoid := Inst_Logic.Effects_Out;
+		
+		// 革命性的一步：把运算导致的新动作，重新塞回事件总线尾部排队！(Event Recursion)
+		FOR i := 1 TO Total_Monoid.Count DO
+			Next_Head := (Q_Head + 1) MOD 200;
+			IF Next_Head <> Q_Tail THEN
+				Event_Bus_Queue[Q_Head] := Total_Monoid.Effects[i];
+				Q_Head := Next_Head;
+			END_IF
+		END_FOR;
+		
+	END_IF
+	
+END_WHILE;
+// ==========================================
+// 当前循环完毕，所有的内部动作都已经消化干净或转移至别处理（物理/跨任务）
+// 系统将平静地等待下一个 PLC 扫描周期（下一毫秒）
+// ==========================================]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ENUM_Effect_Type" Id="{568b60fc-2ea8-44e9-b469-d2a563b20b24}">
+    <Declaration><![CDATA[TYPE ENUM_Effect_Type :
+(
+	EFF_NONE := 0, 
+	EFF_IOT_PUB := 1, 
+	EFF_FILE_LOG := 2, 
+	EFF_VALVE_CTRL := 3, 
+	EFF_ALARM := 4,
+	EFF_IOT_CMD_STOP := 5,
+	EFF_IOT_CMD_START := 6,
+	EFF_IOT_CMD_RESET := 7,
+	EFF_SYSTEM_TICK := 8
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

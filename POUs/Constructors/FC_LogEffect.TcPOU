@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_LogEffect" Id="{0854e244-ac10-4ee4-9aa6-1548e2fcde13}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_LogEffect : DUT_Effect_Monoid
+VAR_INPUT
+    FileName : STRING[32];
+    Message  : STRING[64];
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[FC_LogEffect.Count := 1;
+FC_LogEffect.Effects[1].ETYPE := EFF_FILE_LOG;
+FC_LogEffect.Effects[1].Target := FileName;
+FC_LogEffect.Effects[1].Payload := Message;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

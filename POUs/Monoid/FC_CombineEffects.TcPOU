@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_CombineEffects" Id="{00598a85-a9a0-4c83-8114-461d5d1f96c8}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_CombineEffects : DUT_Effect_Monoid
+VAR_INPUT
+    A : DUT_Effect_Monoid;
+    B : DUT_Effect_Monoid;
+END_VAR
+VAR
+    i : INT;
+    Result : DUT_Effect_Monoid;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Result := A;
+FOR i := 1 TO B.Count DO
+	IF Result.Count < 20 THEN
+		Result.Count := Result.Count + 1;
+		Result.Effects[Result.Count] := B.Effects[i];
+	ELSE
+		EXIT; // 达到上限，放弃后续追加
+	END_IF;
+END_FOR;
+FC_CombineEffects := Result;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

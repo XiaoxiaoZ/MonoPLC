@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="DUT_Effect" Id="{ed1b3dc0-819c-430f-bc7b-fe81dbea2af0}">
+    <Declaration><![CDATA[TYPE DUT_Effect :
+STRUCT
+	EType    : ENUM_Effect_Type := EFF_NONE;
+    Target  : STRING[32] := ''; // 目标: 引脚名、文件名或 Topic
+    Payload : STRING[64] := ''; // 字符串载荷
+    Value   : REAL := 0.0;      // 数值载荷
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

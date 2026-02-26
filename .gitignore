@@ -1,0 +1,31 @@
+# TwinCAT / Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.ncb
+*.aps
+*.bak
+*.cache
+*.compileinfo
+*.tclrs
+*.tmc.hash
+
+# Build and Binaries
+_Boot/
+_CompileInfo/
+*.dll
+*.exe
+*.obj
+*.pdb
+*.idb
+*.ilk
+*.aps
+*.ncb
+*.log
+*.tlog
+
+# OS generated files
+.DS_Store
+Thumbs.db

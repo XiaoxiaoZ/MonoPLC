@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <GVL Name="GVL" Id="{68d23d0e-3aae-46e7-b316-2661d55b91f1}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	Net_ValveCmd : BOOL;
+	Net_Temperature : REAL;
+	System_Time_UINT : ULINT;         // IEC 标准的日期时间类型 (Date and Time)
+
+	
+	
+	// 跨任务通讯桥梁：只存放需要异步处理的副作用
+    Async_Effect_Queue       : ARRAY[0..99] OF DUT_Effect; 
+    Async_Queue_Head         : INT := 0; // Task A 专用写指针
+    Async_Queue_Tail         : INT := 0; // Task B 专用读指针
+	
+	// --- 跨任务输入桥梁 ---
+    // Task B 负责写入 (收到 MQTT 消息时置为 TRUE)
+    // Task A 负责读取并清零 (消费消息)
+    Inbox_IoT_SoftStop : BOOL := FALSE;
+	Inbox_IoT_SoftStart: BOOL := FALSE;
+	Inbox_IoT_SoftReset: BOOL := FALSE;
+	
+	// 异步输入队列 (Task B 压入，Task A 弹出并组装为 Monoid)
+	Async_Input_Queue       : ARRAY[0..99] OF DUT_Effect; 
+    Async_Input_Head        : INT := 0; // Task B 专用写指针
+    Async_Input_Tail        : INT := 0; // Task A 专用读指针
+	
+	// --- HMI 显示专用的日志数组 ---
+	HMI_Logs : ARRAY[1..5] OF STRING(255) := ['','','','',''];
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

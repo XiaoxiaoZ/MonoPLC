@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="Simulation_LOOP" Id="{4eadf293-8764-4d91-ab42-614153400a38}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM Simulation_LOOP
+VAR
+	    Inst_Simulator : FB_PlantSimulator;    // 物理世界模拟器
+		
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// ==========================================
+// 阶段 0：采样当前时间 (Read Time)
+// ==========================================
+// 注意：不同品牌 PLC 读时间的指令不同。
+// Siemens 是 RD_SYS_T()，Codesys 是 SysTimeRtcGet()
+// 这里用伪代码代表读取当前时间的标准动作：
+GVL.System_Time_UINT := F_GetSystemTime(); 
+
+// ==========================================
+// 阶段 A：物理世界演进 (Read from Simulator)
+// ==========================================
+// 传入上一周期的阀门指令，计算出当前的最新温度
+Inst_Simulator(Valve_Open := GVL.Net_ValveCmd);
+GVL.Net_Temperature := Inst_Simulator.Sim_Temp;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

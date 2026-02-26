@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="SideEffect_LOOP" Id="{b52b9c97-2f48-4892-a035-5650bbecbc23}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM SideEffect_LOOP
+VAR
+
+    
+	
+	// --- 新增：IoT 模拟专用的“Wait”变量 ---
+    IoT_State      : INT := 0;      // 0: 空闲, 1: 正在发送(假装阻塞)
+    IoT_Timer      : TON;           // 标准延时导通定时器
+    Active_Effect : DUT_Effect;
+	
+	Temp_Monoid : DUT_Effect_Monoid;
+	
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+// ==========================================
+// 阶段 D：异步执行器 (非阻塞 Wait 模拟网络延迟)
+// ==========================================
+CASE IoT_State OF
+    0: // 空闲，检查队列里有没有积压的活儿
+        IF gvl.Async_Queue_Head  <> gvl.Async_Queue_Tail THEN
+            // 从队列里拿走最早的一条
+            Active_Effect := gvl.Async_Effect_Queue[gvl.Async_Queue_Tail];
+            // 3. 【最后一步】更新 Tail 指针！
+        	// 这一步告诉 Task A：这块内存我还给你了，你可以覆盖它了
+        	gvl.Async_Queue_Tail := (gvl.Async_Queue_Tail + 1) MOD 100;
+            
+            IoT_State := 1; // 开始干活
+        END_IF;
+        
+    1: // 假装正在发网络 (耗时 2 秒)
+        IoT_Timer(IN := TRUE, PT := T#2S); 
+        IF IoT_Timer.Q THEN
+            IoT_Timer(IN := FALSE);
+			
+			// --- 为 HMI 滚动记录日志 ---
+			GVL.HMI_Logs[1] := GVL.HMI_Logs[2];
+			GVL.HMI_Logs[2] := GVL.HMI_Logs[3];
+			GVL.HMI_Logs[3] := GVL.HMI_Logs[4];
+			GVL.HMI_Logs[4] := GVL.HMI_Logs[5];
+			GVL.HMI_Logs[5] := CONCAT('SENT: ', Active_Effect.Payload);
+            
+            IoT_State := 0; // 干完了，回去继续拿下一条
+        END_IF;
+END_CASE;
+
+// ==========================================
+// 阶段 E：模拟前端按下 IoT 软按钮
+// ==========================================
+
+// --- Stop Button ---
+IF GVL.Inbox_IoT_SoftStop THEN
+	GVL.Inbox_IoT_SoftStop := FALSE;
+	Temp_Monoid := FC_StopInputEffect('HMI_Button');
+	Active_Effect := Temp_Monoid.Effects[1];
+	
+	IF ((gvl.Async_Input_Head + 1) MOD 100) <> gvl.Async_Input_Tail THEN
+		gvl.Async_Input_Queue[gvl.Async_Input_Head] := Active_Effect;
+		gvl.Async_Input_Head := (gvl.Async_Input_Head + 1) MOD 100;
+	END_IF;
+END_IF;
+
+// --- Start Button ---
+IF GVL.Inbox_IoT_SoftStart THEN
+	GVL.Inbox_IoT_SoftStart := FALSE;
+	Temp_Monoid := FC_StartInputEffect('HMI_Button');
+	Active_Effect := Temp_Monoid.Effects[1];
+	
+	IF ((gvl.Async_Input_Head + 1) MOD 100) <> gvl.Async_Input_Tail THEN
+		gvl.Async_Input_Queue[gvl.Async_Input_Head] := Active_Effect;
+		gvl.Async_Input_Head := (gvl.Async_Input_Head + 1) MOD 100;
+	END_IF;
+END_IF;
+
+// --- Reset Button ---
+IF GVL.Inbox_IoT_SoftReset THEN
+	GVL.Inbox_IoT_SoftReset := FALSE;
+	Temp_Monoid := FC_ResetInputEffect('HMI_Button');
+	Active_Effect := Temp_Monoid.Effects[1];
+	
+	IF ((gvl.Async_Input_Head + 1) MOD 100) <> gvl.Async_Input_Tail THEN
+		gvl.Async_Input_Queue[gvl.Async_Input_Head] := Active_Effect;
+		gvl.Async_Input_Head := (gvl.Async_Input_Head + 1) MOD 100;
+	END_IF;
+END_IF;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

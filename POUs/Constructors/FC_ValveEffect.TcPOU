@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_ValveEffect" Id="{3927258d-9a17-410d-93a5-09ce22587c12}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_ValveEffect : DUT_Effect_Monoid
+VAR_INPUT
+    ValveName : STRING[32];
+    Open      : BOOL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[FC_ValveEffect.Count := 1;
+FC_ValveEffect.Effects[1].EType := EFF_VALVE_CTRL;
+FC_ValveEffect.Effects[1].Target := ValveName;
+IF Open THEN
+	FC_ValveEffect.Effects[1].Value := 1.0;
+ELSE
+	FC_ValveEffect.Effects[1].Value := 0.0;
+END_IF;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

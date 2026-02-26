@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Task Name="PlcTask" Id="{5f4d2215-439d-4b34-9963-9b2c45353186}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>10000</CycleTime>
+    <Priority>20</Priority>
+    <PouCall>
+      <Name>SideEffect_LOOP</Name>
+    </PouCall>
+    <PouCall>
+      <Name>Simulation_LOOP</Name>
+    </PouCall>
+    <PouCall>
+      <Name>Control_LOOP</Name>
+    </PouCall>
+    <TaskFBGuid>{577b7598-a1a5-4385-bb09-d0d4017e9f98}</TaskFBGuid>
+    <Fb_init>{a19884e3-2da3-48fa-ba68-cc22d4410184}</Fb_init>
+    <Fb_exit>{adee4f42-bd14-47c5-a323-62498ce13458}</Fb_exit>
+    <CycleUpdate>{7e9bcbbc-de7d-4dc9-96ef-5637108f6d32}</CycleUpdate>
+    <PostCycleUpdate>{8502ad83-0d94-47ed-89a1-09412898d6e5}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>

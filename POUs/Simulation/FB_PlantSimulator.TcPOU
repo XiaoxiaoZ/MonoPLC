@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PlantSimulator" Id="{6f12d73c-8e8b-4579-8c81-506458d243cb}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PlantSimulator
+VAR_INPUT
+    Valve_Open : BOOL;       // 接收来自路由器的控制信号
+END_VAR
+VAR_OUTPUT
+    Sim_Temp   : REAL := 75.0; // 初始环境温度
+END_VAR
+VAR
+    Heating_Rate : REAL := 0.01;  // 每一周期的自然升温速率
+    Cooling_Rate : REAL := 0.02;  // 阀门打开时的降温速率
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 极其简单的热力学模拟
+IF Valve_Open THEN
+	// 冷水阀打开，温度快速下降
+	Sim_Temp := Sim_Temp - Cooling_Rate;
+ELSE
+	// 冷水阀关闭，温度缓慢向 90 度靠拢
+	IF Sim_Temp < 90.0 THEN
+		Sim_Temp := Sim_Temp + Heating_Rate;
+	END_IF;
+END_IF;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

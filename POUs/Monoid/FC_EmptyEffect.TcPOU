@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_EmptyEffect" Id="{7cfc7f61-6f02-4442-8236-907694e93946}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_EmptyEffect : DUT_Effect_Monoid
+VAR_INPUT
+END_VAR
+VAR
+	Empty : DUT_Effect_Monoid;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[FC_EmptyEffect := Empty;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

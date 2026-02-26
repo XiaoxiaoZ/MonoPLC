@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_IoTEffect" Id="{dbd7e76d-7736-4f94-bdcc-3276c6607da1}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_IoTEffect : DUT_Effect_Monoid
+VAR_INPUT
+    Topic   : STRING[32];
+    Message : STRING[64];
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[FC_IoTEffect.Count := 1;
+FC_IoTEffect.Effects[1].EType := EFF_IOT_PUB;
+FC_IoTEffect.Effects[1].Target := Topic;
+FC_IoTEffect.Effects[1].Payload := Message;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

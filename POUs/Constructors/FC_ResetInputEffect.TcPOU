@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_ResetInputEffect" Id="{DDEE8AB9-8A15-46B9-BDE1-97FF5AD612B8}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_ResetInputEffect : DUT_Effect_Monoid
+VAR_INPUT
+	Source : STRING[32];
+END_VAR
+VAR
+	NewEffect : DUT_Effect;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 1. 构造单个的 Effect
+NewEffect.EType := EFF_IOT_CMD_RESET;
+NewEffect.Target := Source;
+NewEffect.Payload := 'Reset Request Received';
+NewEffect.Value := 1.0;
+
+// 2. 包装成 Monoid 返回
+FC_ResetInputEffect.Count := 1;
+FC_ResetInputEffect.Effects[1] := NewEffect;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

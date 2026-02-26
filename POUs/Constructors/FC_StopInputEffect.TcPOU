@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_StopInputEffect" Id="{2BEDEDBC-CBBC-411A-B871-3642BEB3F9AA}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_StopInputEffect : DUT_Effect_Monoid
+VAR_INPUT
+	Source : STRING[32];
+END_VAR
+VAR
+	NewEffect : DUT_Effect;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 1. 构造单个的 Effect
+NewEffect.EType := EFF_IOT_CMD_STOP;
+NewEffect.Target := Source;
+NewEffect.Payload := 'Stop Request Received';
+NewEffect.Value := 1.0;
+
+// 2. 包装成 Monoid 返回
+FC_StopInputEffect.Count := 1;
+FC_StopInputEffect.Effects[1] := NewEffect;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

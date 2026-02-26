@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_TickInputEffect" Id="{43a0d588-ac49-4fb6-bf10-dcce76ac0dd7}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_TickInputEffect : DUT_Effect_Monoid
+VAR_INPUT
+	Source : STRING[32]; // 来源标识，例如 'System_Timer'
+END_VAR
+VAR
+	Temp_Effect : DUT_Effect;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 创建一个系统环境 Tick 事件的包裹
+Temp_Effect.EType  := EFF_SYSTEM_TICK;
+Temp_Effect.Target := Source;
+Temp_Effect.Value  := 1.0; 
+Temp_Effect.Payload:= '';
+
+FC_TickInputEffect := FC_EmptyEffect();
+FC_TickInputEffect.Count := 1;
+FC_TickInputEffect.Effects[1] := Temp_Effect;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

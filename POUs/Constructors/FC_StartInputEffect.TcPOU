@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_StartInputEffect" Id="{8A2791B7-BEBE-4D1D-9A9A-1F5BC2E4F2CB}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_StartInputEffect : DUT_Effect_Monoid
+VAR_INPUT
+	Source : STRING[32];
+END_VAR
+VAR
+	NewEffect : DUT_Effect;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 1. 构造单个的 Effect
+NewEffect.EType := EFF_IOT_CMD_START;
+NewEffect.Target := Source;
+NewEffect.Payload := 'Start Request Received';
+NewEffect.Value := 1.0;
+
+// 2. 包装成 Monoid 返回
+FC_StartInputEffect.Count := 1;
+FC_StartInputEffect.Effects[1] := NewEffect;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
