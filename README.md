@@ -23,6 +23,11 @@ For a deep dive into the underlying mathematical representation, mapping algebra
 - [🇨🇳 架构设计深度解析 (Markdown)](MonoPLC_Architecture.md)
 - [🇬🇧 Architecture Deep Dive (Markdown)](MonoPLC_Architecture_EN.md)
 
+For a comparison of implementing Monoids and algebraic abstractions between ST and modern languages (Rust):
+
+- [🇨🇳 基于幺半群的代数控制架构对比 (Markdown)](PLC_vs_Modern_Languages_Challenges.md)
+- [🇬🇧 Algebraic Control Architecture Comparison (Markdown)](PLC_vs_Modern_Languages_Challenges_EN.md)
+
 ## Tech Stack
 * TwinCAT 3 XAE (Beckhoff)
 * IEC 61131-3 Structured Text (ST) 
