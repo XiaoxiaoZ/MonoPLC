@@ -1,4 +1,5 @@
 # MonoPLC: Mathematical Model and Industrial Practice of a Side-Effect-Free PLC Control Architecture based on Monoids
+**Author:** Xiaoxiao Zhang
 
 ## 1. Challenges and Limitations of Traditional PLC Architectures
 

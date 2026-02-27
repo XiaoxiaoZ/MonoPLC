@@ -14,10 +14,6 @@ VAR
     Is_Cooling   : BOOL := FALSE; // 内部状态
     Eff_Valve    : DUT_Effect_Monoid;
     Eff_Network  : DUT_Effect_Monoid;
-	
-	// 新增：用于持续报警的定时器
-    Alarm_Timer  : TON;
-	
 	// 暂存拼接后的消息
     Final_Payload    : STRING[64];
 	
@@ -42,8 +38,6 @@ IF Input_Event.EType = EFF_IOT_CMD_STOP THEN
 	Eff_Network := FC_IoTEffect('mqtt/status', Final_Payload);
 	Effects_Out := FC_CombineEffects(Eff_Valve, Eff_Network);
 	
-	Alarm_Timer(IN := FALSE);
-
 ELSIF Input_Event.EType = EFF_IOT_CMD_START AND NOT System_En THEN
 	System_En := TRUE; // 恢复机器使能
 	
@@ -56,8 +50,6 @@ ELSIF Input_Event.EType = EFF_IOT_CMD_START AND NOT System_En THEN
 	Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
 
 ELSIF Input_Event.EType = EFF_IOT_CMD_RESET THEN
-	// 复位报警定时器等状态
-	Alarm_Timer(IN := FALSE);
 	
 	Final_Payload := CONCAT('[', Current_Time_Str);
 	Final_Payload := CONCAT(Final_Payload, ' | T=');
@@ -83,8 +75,6 @@ ELSIF Input_Event.EType = EFF_SYSTEM_TICK THEN
 			Eff_Valve   := FC_ValveEffect('CoolingValve', FALSE);
 			Eff_Network := FC_IoTEffect('mqtt/status', Final_Payload);
 			Effects_Out := FC_CombineEffects(Eff_Valve, Eff_Network);
-			
-			Alarm_Timer(IN := FALSE);
 		
 		// 边缘触发：跨越 80 度的瞬间动作
 		ELSIF Current_Temp > 80.0 AND NOT Is_Cooling THEN
