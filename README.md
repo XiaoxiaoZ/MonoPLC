@@ -3,7 +3,7 @@
 MonoPLC is an experimental, modern software architecture applied to the world of industrial control (Programmable Logic Controllers, PLCs). Built natively in TwinCAT 3 (IEC 61131-3 Structured Text), it radically transforms traditional PLC design patterns by migrating them into formal mathematical structures.
 
 ## Motivation
-Traditional PLC code is often heavily procedural and state-mutating. Code checks `IF Temp > 80 THEN TurnOnValve()`, creating direct entanglement between logical condition, physical I/O mapping, and task scheduling. As projects scale, especially when asynchronous network protocols (like MQTT or REST integrations) are introduced, these procedural side-effects lead to "Zombie State Machines", race conditions, and watchdog timeouts due to blocking network calls acting natively on the millisecond PLC thread.
+Traditional PLC code is often heavily procedural and state-mutating. Code checks `IF Temp > 80 THEN TurnOnValve()`, creating direct entanglement between logical condition, physical I/O mapping, and task scheduling. As projects scale, especially when asynchronous network protocols (like MQTT or REST integrations) are introduced, these procedural side-effects lead to "Zombie States", race conditions, and watchdog timeouts due to blocking network calls acting natively on the millisecond PLC thread.
 
 ## The Solution: Side-Effect Separation via Monoids
 MonoPLC proposes a simple but powerful core philosophy: **completely decouple pure calculation logic from the execution of physical side effects**.

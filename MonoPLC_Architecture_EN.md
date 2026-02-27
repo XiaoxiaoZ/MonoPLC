@@ -1,8 +1,8 @@
-# MonoPLC: Mathematical Model and Industrial Practice of a Pure Functional PLC Control Architecture based on Monoids
+# MonoPLC: Mathematical Model and Industrial Practice of a Side-Effect-Free PLC Control Architecture based on Monoids
 
-## 1. Core Pain Point: Why Do Traditional PLC Architectures Fall Out of Control?
+## 1. Challenges and Limitations of Traditional PLC Architectures
 
-In traditional industrial automation programming (such as IEC 61131-3), we often directly interface with underlying hardware. However, the current trend is to mix in new devices, such as IoT equipment:
+In traditional industrial automation programming (such as IEC 61131-3), we often directly interface with underlying hardware. However, the current trend is to mix in new devices, such as IoT equipments:
 
 ```iecst
 // Traditional code example: A breeding ground for disasters
@@ -15,13 +15,13 @@ END_IF
 
 This kind of direct manipulation brings about fatal engineering problems:
 **The entanglement of pure logic and external side effects (network, IO, and delays intertwined)**
-Pure business logic ("when to open the water valve") is mashed together with low-level communication ("how to send MQTT", "how to wait for network delay without blocking the Task"). If the network is congested, directly calling `MQTT_Send` will crash the entire millisecond-level real-time Task; if it's pushed asynchronously to another Task, it introduces the nightmare of cross-task data preemption and mutual exclusion.
+Pure business logic ("when to open the water valve") is mashed together with low-level communication ("how to send MQTT", "how to wait for network delay without blocking the Task"). If the network is congested, directly calling `MQTT_Send` will cause problems for the entire millisecond-level real-time Task.
 
 ---
 
 ## 2. Introducing the Monoid Algebraic Structure
 
-To resolve the chaos mentioned above, we borrow a simple yet incredibly powerful concept from abstract algebra: the **Monoid**.
+To resolve the chaos mentioned above, we borrow a simple yet powerful concept from abstract algebra: the **Monoid**.
 
 ### What is a Monoid?
 In mathematics, a set $M$ equipped with a binary operation $\circ$ forms a Monoid if it satisfies the following three conditions:
@@ -33,7 +33,7 @@ In mathematics, a set $M$ equipped with a binary operation $\circ$ forms a Monoi
 In the MonoPLC architecture, we abstract **all external impacts (whether input signals or output actions)** into **"Effect"** data. The `Effect` set, combined through a merge operation, forms an `Effect_Monoid`.
 
 This means:
-- **Closure**: Combining one Effect (e.g., closing a water valve) with another Effect (e.g., sending a log) still results in the exact same `DUT_Effect_Monoid` type. Not only is the logical interface extremely uniform, but it also allows for endless stacking. Processing 1 operation versus 100 operations makes no difference in the input parameter definitions of downstream functions:
+- **Closure**: Combining one Effect (e.g., cooling valve state publish to a phone) with another Effect (e.g., sending a log) still results in the exact same `DUT_Effect_Monoid` type. Not only is the logical interface extremely uniform, but it also allows for extensive stacking. Processing 1 operation versus 100 operations makes no difference in the input parameter definitions of downstream functions:
   ```iecst
   Eff_Valve   := FC_ValveEffect('CoolingValve', FALSE); // Generates 1 closing valve side effect
   Eff_Network := FC_IoTEffect('mqtt/status', 'Stop');   // Generates 1 network side effect
@@ -43,10 +43,11 @@ This means:
 
 - **Identity**: If nothing happens during the millisecond scan cycle, we do not return the traditional "direct RETURN doing nothing (Void/No-Op)" or a "NULL pointer". Instead, we insist on returning an "Empty Monoid":
   ```iecst
-  // No events triggered, returning a Monoid with Count = 0 and an empty array
+  // No events triggered, returning an empty Monoid
   Effects_Out := FC_EmptyEffect(); 
   ```
-  This completely eliminates those ugly boundary array checks like `IF pData <> 0 THEN` when downstream functions handle empty data. Anything combined with `FC_EmptyEffect()` remains equally itself.
+  
+  Anything combined with `FC_EmptyEffect()` remains equally itself.
 
 - **Associativity**: This is the key to handling multiple concurrencies and asynchronous communication. Whether it's direct electrical signals received locally by Task A from the HMI, or indirect commands parsed from the network IoT protocol by Task B, as long as they follow the Monoid rules, developers can fold them together freely like mathematical addition:
   ```iecst
@@ -54,15 +55,33 @@ This means:
   Total_Input_Monoid := FC_CombineEffects(IoT_Input_Monoid, HMI_Input_Monoid);
   Total_Input_Monoid := FC_CombineEffects(Total_Input_Monoid, Physical_Input_Monoid);
   ```
-  No matter which core's Task it is in, or in what out-of-order sequence they are merged, what is eventually passed to the pure logic processing function is always a cleanly washed, neatly merged abstract "input data set".
+  No matter which core's Task it is in, or in what out-of-order sequence they are merged, what is eventually passed to the core control logic is always a clean data type.
 
 ---
 
 ## 3. MonoPLC Detailed Architecture Implementation
 
 ### 3.1 Data Definitions and the Identity Element (The Types & Identity)
+To implement the Monoid pattern, we define a set of data structures and the identity element. The following design is just one example of a structure that follows Monoid rules; other implementations are also valid as long as they satisfy the algebraic laws.
 
-First, we define a single `DUT_Effect` structure, which is purely declarative data, not an executable imperative action.
+```iecst
+// Enumeration of the types of side effects
+TYPE ENUM_Effect_Type :
+(
+	EFF_NONE := 0, 
+	EFF_IOT_PUB := 1, 
+	EFF_FILE_LOG := 2, 
+	EFF_VALVE_CTRL := 3, 
+	EFF_ALARM := 4,
+	EFF_IOT_CMD_STOP := 5,
+	EFF_IOT_CMD_START := 6,
+	EFF_IOT_CMD_RESET := 7,
+	EFF_SYSTEM_TICK := 8
+);
+END_TYPE
+```
+
+First, we define a single `DUT_Effect` structure.
 ```iecst
 TYPE DUT_Effect :
 STRUCT
@@ -72,8 +91,6 @@ STRUCT
 END_STRUCT
 END_TYPE
 ```
-**Why do we need a `Target` field?**
-In this system where everything is an event, `EType` is just a broad category of action (e.g., `Open Valve` or `Send Network Message`). If you have 10 different water valves, or you want to publish to 10 different MQTT topics, you don't need to define 10 Enum types. You only need to set `Target` to `'CoolingValve'` or `'DrainValve'` when generating the Effect. In the final routing layer of the Event Loop, it looks at this `Target` string and accurately routes the digital conversion to the corresponding physical pin (`GVL.Valve_A := ...`). This greatly enhances the versatility of the structure.
 
 Next, we use it to construct `DUT_Effect_Monoid`, which represents the entire set of states or behaviors:
 ```iecst
@@ -102,7 +119,7 @@ With it, any complex composite action can ultimately be reduced to **pure, natur
 > [!NOTE]
 > In the sample code of this project, we utilize the most straightforward **FIFO fixed-length array append** approach to implement the associativity of Effects (i.e., `M1 + M2` will sequentially append the events in `M2` to the end of `M1`).
 > 
-> However, please note: **This is not the only way to merge them.** As long as the mathematical properties of closure and associativity are satisfied, you can adopt the following in different application scenarios:
+> However, please note: **This is not the only way to merge them.** As long as the mathematical properties of closure and associativity are satisfied, you can adopt the following in different application scenarios for instance:
 > - **Ring Buffer** concatenation, used for ultra-high-frequency scenarios to avoid the massive overhead of array loop copying.
 > - **Linked List** concatenation, used for modern control systems supporting dynamic memory allocation (like `__NEW` in TwinCAT 3).
 > - **Deduplication merge with priority** (e.g., if there is a 'close valve' in `M1` and also one in `M2`, discard the duplicate upon merging), as long as the logic is coherent.
@@ -111,7 +128,7 @@ With it, any complex composite action can ultimately be reduced to **pure, natur
 
 ### 3.3 Core Data Flow and Onion Architecture Diagram
 
-The Mermaid diagram below illustrates MonoPLC's single-thread event loop mechanism and how external side-effects are aggressively decoupled from the main logic flow:
+The Mermaid diagram below illustrates MonoPLC's event loop mechanism and how external side-effects are decoupled from the main logic flow:
 
 ```mermaid
 flowchart TD
@@ -136,8 +153,8 @@ flowchart TD
                 TickGen["System Tick Generator"]
                 Router{"Event Routing Dispatcher"}
                 
-                subgraph Layer_Core ["4. Core Control Logic Layer (FB_SimpleLogic)"]
-                    SafeCore((Safe Core Control Logic Never directly triggers external blocking))
+                subgraph Layer_Core ["4. Deterministic Core Layer (FB_SimpleLogic)"]
+                    SafeCore((Safe Core Control Logic / Deterministic Logic Block))
                     MonoidMerge["Side-Effect Collector (FC_CombineEffects)"]
                 end
             end
@@ -183,7 +200,7 @@ class AsyncInputQ,AsyncEffectQ,EventBus,MonoidMerge monoidFeature;
 
 ### 3.4 Architecture Key Concepts
 
-Based on the code structure, the project is divided into three strictly isolated tiers:
+Based on the code structure, the project is divided into three strictly isolated parts:
 
 1. **Side-Effect Layer (`SideEffect_LOOP`)**:
    - Responsible for dealing with the "dirty" external environment. It converts unpredictable inputs (like HMI Button clicks or HTTP payloads) into standardized `DUT_Effect` structures (via functions like `FC_StartInputEffect`) and pushes them into the **`Async_Input_Queue`**.
@@ -191,65 +208,36 @@ Based on the code structure, the project is divided into three strictly isolated
 
 2. **Real-Time Control Loop (`Control_LOOP`)**:
    - This is the ultra-high-frequency loop (e.g., 1ms cycle time). As its first step, it ingests all incoming external events and the locally generated System Tick, consolidating them into the **`Event_Bus_Queue`**.
-   - Next, it initiates a robust **`WHILE` Loop Event Dispatcher**. If the popped event demands hardware manipulation, it immediately toggles the physical pins. If it's a network request, it's routed sequentially to the `SideEffect_LOOP` via the async queue. If it represents a business logic trigger (e.g., a button press or the mere passage of time), only then is it fed into the core brain for computation.
-   - 💡 **Flexibility Note: Event routing is NOT the only dispatch mechanism!**
-     - This example employs a single-threaded event loop architecture (much like the Node.js engine) utilizing an `Event_Bus_Queue`. This is an extremely pure but highly geeky implementation.
+   - Next, it initiates a robust **Event Dispatcher**. This stage provides the architectural freedom to either process events the traditional "PLC way" (direct hardware mapping) or treat them as side effects. If the popped event demands hardware manipulation, it can immediately toggle physical pins. If it's a network request, it is routed to the `SideEffect_LOOP` via the async queue.
+   - **Flexibility Note: Event routing is NOT the only dispatch mechanism!**
+     - This example employs a single-threaded event loop architecture (much like the Node.js engine) utilizing an `Event_Bus_Queue`.
      - **Developers are completely free to dismantle this loop.** As long as you catch the `DUT_Effect_Monoid` yielded by your business logic, you can dispatch it using traditional cascading `IF` statements or assign it across different PLC Tasks for relay execution. The Onion Architecture's isolation boundaries remain perfectly intact.
 
 3. **Core Control Code Layer (`FB_SimpleLogic`)**:
-   - This serves as the brain for business logic computation. In this project's exemplar, it is abstracted to the highest degree as a **"Pure Function"**.
-   - It possesses no timers, maintains no network connections, and is barred from manipulating physical pins directly. It strictly receives the **frozen real-time data** (e.g., temperature, frozen timestamp strings) alongside a **single input event** that triggers its decision-making.
-   - The output of its contemplation is a multitude of **"Desired Side-Effect" instruction sets** (collected and bundled using `FC_CombineEffects`).
-   - ⚠️ **CRITICAL ARCHITECTURE DECLARATION: Pure Functions are merely an option, NOT a restriction!**
-     - The example code employs an aggressively strict Pure Function approach simply to demonstrate **how remarkably high the ceiling for state decoupling can reach** under the MonoPLC framework.
-     - **Implementing a Pure Function is absolutely not a prerequisite for this architecture to run.**
-     - As long as you physically isolate your "computational logic" from the "error-prone side-effect actions" (like sending network requests or reading/writing files), you are perfectly safe. Even if you maintain traditional nested calls, State Machines (SFC), or retain a few controllable local state variables inside `FB_SimpleLogic`—as long as the final computed outcome is purely a `DUT_Effect_Monoid` data set, this Onion framework will flawlessly shield your main program from being compromised by external environments.
+   - This serves as the brain for PLC logic computation. In this project's exemplar, we are doing a simple temperature control logic.
+   - It evaluates inputs (and optionally its internal state), and the absolute result of its computation is a multitude of **"Desired Side-Effect" instruction sets** (collected and bundled using `FC_CombineEffects` as a Monoid).
+   - **CRITICAL ARCHITECTURE DECLARATION: Isolation is the Essence!**
+     - The core philosophy here is to isolate physical I/O and asynchronous tasks that cause blocking from the deterministic control loop entirely.
+     - As long as your logic structure achieves the isolation of "business logic" and "side-effect actions that cause network latency", ensuring the brain operates as a deterministic module (Deterministic Logic Block) that solely evaluates input effects mapped mathematically as $f(State_t, InputEffect_t) \rightarrow (State_{t+1}, OutputEffect_t)$, yielding an execution intent purely encoded as an Effect Monoid, this Onion framework will flawlessly shield your main program from being compromised by external environments.
+     - **Note on "Pure Functions"**: Although we use the term "Deterministic Logic Block" to better align with industrial automation terminology, the mathematical essence of this module is deeply rooted in the concept of **Pure Functions** from functional programming. While this architecture makes it possible to implement strict pure functions (where the output is solely determined by the input), **it is often unnecessary to pursue absolute statelessness in practical PLC programming.** Most industrial control requires internal state persistence (e.g., timers, counters, or state machines).
 
 ---
 
-## 4. Details of the Great Advantages of the MonoPLC Architecture
+## 4. Details of the Advantages of the MonoPLC Architecture
 
 ### 4.1 The Core Layer is Immune to All Network/Timing Blockages
 Traditional network sending code (e.g., calling an HTTP REST API) might consume 100~500 milliseconds. If written inside the main real-time trunk code, it will interfere with the code execution.
-In MonoPLC, the pure logic `FB_SimpleLogic` will always spend less than 1 millisecond calculating and spitting out an Effect struct with `Target='mqtt'`. Immediately after, the routing layer tosses it into the `Async_Queue` protected by pointer locks and quickly exits. The network sending library can be placed in a sub-program with minimal priority (e.g., 500ms Cycle) to poll the queue slowly.
+In MonoPLC, as a deterministic core, `FB_SimpleLogic` will always spend less than 1 millisecond performing its state transitions and spitting out an Effect struct with `Target='mqtt'`. Immediately after, the routing layer tosses it into the `Async_Queue` protected by pointer locks and quickly exits. The network sending library can be placed in a sub-program with minimal priority (e.g., 500ms Cycle) to poll the queue slowly.
 
-### 4.2 Event Idempotence and the Eradication of Zombie Vulnerabilities
-In scattered traditional PLC logic, there is often implicit state coupling and race conditions: multiple pieces of code might simultaneously operate on outputs, resulting in the last one overwriting winning. Furthermore, after a stop command is issued, if the next line detects a high water temperature and turns the actuator back on, it forms what is known as a "Zombie State Machine" — the code essentially degrades into reflexes based on global states.
-
-When a user presses "Stop" once via the HMI, in the older generation code, this maps to these messy overriding conflicts.
-In this new architecture, if the HMI sends an `EFF_IOT_CMD_STOP` Effect, once the pure logic parses it, the response it makes is not an "action statement" but a "declarative output":
-```iecst
-System_En := FALSE;
-Eff_Valve := FC_ValveEffect('CoolingValve', FALSE);
-```
-Since what is output here is not an action command, but a target state statement (fixing the cooling valve at the FALSE state), this is innately **Idempotent**. Even if the HMI freezes and sends twenty stop commands continuously, it equates to receiving just one command.
-Simultaneously, leveraging the transversality of purely analyzing data, internal business states (like `System_En`) will forcefully sever parasitic reflex activations caused by temperature jumps, **eradicating the most notorious zombie state machines right from the source.**
-
-### 4.3 "Time-Travel" and Replay Debugging (Time-Travel Debugging)
-Since all external stimuli have been transformed by Stage A into the uniformly memory-formatted `Input_Monoid`; and all behaviors have become `Total_Out_Monoid` recorded in memory.
-This means we can freely add "recording functionality"!
-We can record each major cycle's `[Environment Time, Environment Temperature, Inputs_In]` as slices. Should a major downtime incident occur, we can import these files back into a virtual PLC runtime environment and run it again. Since `FB_SimpleLogic` is a 100% pure function devoid of external calls, given identical inputs, **it will 100% flawlessly reproduce the exact decisions made at the incident scene verbatim!**
-
-### 4.4 Horizontal Scaling: Adding Any Devices Without Touching the Main Loop
+### 4.2 Horizontal Scaling: Adding Any Devices Without Touching the Main Loop
 Adding an extra button in a traditional project requires stuffing `OR Btn3 OR Btn4` crazily into various IF branches, and if connected to an external network, it generates a massive amount of edge cases and even pointer errors.
 By leveraging Monoids: HMI presses the Start button? No problem, assemble it into an `Input_Effect` Monoid tagged with `'Start'` and throw it into the shared queue. Because associativity works its magic again here: we are merely doing mathematical **Set Addition**!
 The polling logic of the main control function (`FOR i := 1 TO Inputs_In.Count DO`) doesn't even need a single punctuation mark altered; it can handle all concurrent new inputs entirely on its own.
 
-### 4.5 The Ultimate Unification: Architectural Freedom Following Complete Side-Effect Separation
-It must be particularly clarified that whether it's the three-stage "onion model" we talked about earlier, or the "single-threaded event loop" we are about to demonstrate, they are **merely the external skeleton of the program, and by no means the ultimate goal of the MonoPLC architecture**.
-
-The true core and ultimate purpose of the MonoPLC architecture are always one: **To completely separate "pure calculation logic" from "the execution of side effects generated upon the external world".**
-
-Precisely because business computations only generate `DUT_Effect_Monoid` as intermediate data packets, without ever directly touching physical pins or low-level network interfaces, **developers are granted the freedom to modify the external framework entirely at whim**.
-
-For instance, to pursue extreme asynchronous performance, a developer could, purely out of personal preference, instantly refactor `Control_LOOP` into a single-threaded event loop architecture akin to a **Node.js engine** or a **modern Actor model**, all without needing to change a single line of code inside the core pure logic module `FB_SimpleLogic`:
-
-1. **Construct a Unified Event Bus**: Set up an ultra-high-frequency circular queue `Event_Bus_Queue` in the PLC memory, treating any inputs (HMI commands, `EFF_SYSTEM_TICK` representing the passing of clock time) and any outputs requiring execution (controlling hardware) equally as "Events".
-2. **Event Routing Loop (The Router)**: Initiate a `WHILE queue is not empty` dispatcher, popping out an event and dispatching it right away (write IO for controlling valves, throw into the background for sending network texts).
-3. **Event Recursion**: If the popped event is a command provided to the brain (like `TICK`), send it to the pure function for calculation. The resulting "Output Side Effects" are **never executed immediately**, but inversely **queued back up as new events at the tail of the `Event_Bus_Queue`**, waiting for the loop engine to digest them slowly.
-
-The flexibility of these refactorings is merely a byproduct derived from side-effect isolation. When you achieve the complete decoupling of system states and the execution of side effects, no matter what operating framework the exterior adopts (traditional linear scanning or event-driven loops), it can be switched according to practical engineering needs, all while the core control code itself requires no modification.
+### 4.3 Bonus Advantage: "Time-Travel" and Replay Debugging
+Since all external stimuli are transformed by Stage A into the memory-formatted `Input_Monoid` and all behaviors are captured in `Total_Out_Monoid`, it becomes possible to record each cycle's `[Timestamp, Environment Data, Inputs_In]`. In the event of a downtime incident, these logs can be imported into a virtual PLC runtime environment to replay the exact scenario.
+- **Condition for Success**: This deterministic replay is a powerful "bonus" capability that is guaranteed if `FB_SimpleLogic` is implemented as a **Pure Function**. Provided it remains devoid of direct external side-effect calls, the same initial internal state and input sequence will yield the exact same outcomes, enabling perfect reproduction of bugs.
 
 ## 5. Conclusion
 
-MonoPLC explores the feasibility of introducing functional programming and mathematical concepts into PLC (Programmable Logic Controller) development. By utilizing **Data Stream** abstraction to replace traditional **direct state manipulation**, we have, to a certain extent, mitigated the common issues of logical entanglement and state conflicts in industrial control software. This design pattern, which physically isolates external physical environment interactions from internal business logic, provides a valuable engineering reference for improving the testability, maintainability, and long-term stability of large-scale automated control code.
+MonoPLC explores the feasibility of introducing strict Deterministic Logic Block and Monoid algebraic mathematical concepts into PLC (Programmable Logic Controller) development. By utilizing **Data Stream** abstraction to replace traditional **direct state manipulation**, we have, to a certain extent, mitigated the common issues of logical entanglement and state conflicts in industrial control software. This design pattern, which physically isolates external physical environment interactions from internal business logic, provides a valuable engineering reference for improving the determinism, testability, and long-term stability of large-scale automated control code.
