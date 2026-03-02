@@ -1,3 +1,9 @@
+​"Les mathématiciens n'étudient pas des objets, mais des relations entre les objets ; il leur est donc indifférent de remplacer ces objets par d'autres, pourvu que les relations ne changent pas. La matière ne leur importe pas, la forme seule les intéresse." —— Henri Poincaré, La Science et l'Hypothèse (1902)
+
+​English Translation
+
+​"Mathematicians do not study objects, but the relations between objects; to them it is a matter of indifference if these objects are replaced by others, provided that the relations do not change. Matter does not engage their attention, they are interested in form alone." —— Henri Poincaré, Science and Hypothesis (1905 translation)
+
 # MonoPLC: A Side-Effect-Free Event-Driven PLC Architecture
 
 MonoPLC is an experimental, modern software architecture applied to the world of industrial control (Programmable Logic Controllers, PLCs). Built natively in TwinCAT 3 (IEC 61131-3 Structured Text), it radically transforms traditional PLC design patterns by migrating them into formal mathematical structures.
