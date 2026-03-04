@@ -37,3 +37,6 @@ For a comparison of implementing Monoids and algebraic abstractions between ST a
 ## Tech Stack
 * TwinCAT 3 XAE (Beckhoff)
 * IEC 61131-3 Structured Text (ST) 
+
+Future plan:
+Now the moniod could collect and execute side effects but not natually mix them within the normal logic flow which means we can interupt the flow if side effect effects. Maybe monad can help.
