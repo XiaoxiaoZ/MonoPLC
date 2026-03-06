@@ -80,7 +80,8 @@ WHILE Q_Tail <> Q_Head DO
 	ELSIF Current_Event.EType = EFF_SYSTEM_TICK OR 
 		  Current_Event.EType = EFF_IOT_CMD_START OR 
 		  Current_Event.EType = EFF_IOT_CMD_STOP OR 
-		  Current_Event.EType = EFF_IOT_CMD_RESET THEN
+		  Current_Event.EType = EFF_IOT_CMD_RESET OR
+		  Current_Event.EType = EFF_SETPOINT_CHANGE THEN
 		// 路由类型 3：[业务逻辑激励源] -> 送入纯函数大脑
 		// 不管是按键被按下了，还是只是这一毫秒的时间流逝了，全都丢给它去算！
 		Inst_Logic(
