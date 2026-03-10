@@ -15,14 +15,16 @@ flowchart TD
     subgraph Layer_PLC ["1. Programmable Logic Controller (TwinCAT PLC) - Real-time Control Layer"]
         direction TB
         SafeCore(("FB_SimpleLogic\n(POUs/PLCLogic/FB_SimpleLogic.TcPOU)"))
-        AsyncOut[("Async_Effect_Queue\n(GVL System State Output)")]
-        AsyncIn[("Async_Input_Queue\n(GVL Legal Command Input)")]
+        MonoidMerge{"FC_CombineEffects\n(Monoid Folding)"}
+        AsyncOut[("Async_Effect_Queue\n(Output Effect Monoid)")]
+        AsyncIn[("Async_Input_Queue\n(Legal Effect Input)")]
         Hardware[(Physical Actuators/Sensors)]
         
         Hardware -.->|High-frequency physical mapping| SafeCore
         SafeCore -->|Direct hardware control| Hardware
-        SafeCore -->|Emit side-effects for collection| AsyncOut
-        AsyncIn -->|Router passes to business core| SafeCore
+        SafeCore -->|Yields isolated side-effects| MonoidMerge
+        MonoidMerge -->|Associative packaging to Monoid| AsyncOut
+        AsyncIn -->|Extract Effect for core logic| SafeCore
     end
 
     %% Middleware Bus Layer

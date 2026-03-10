@@ -15,14 +15,16 @@ flowchart TD
     subgraph Layer_PLC ["1. 可编程逻辑控制器 (TwinCAT PLC) - 实时控制层"]
         direction TB
         SafeCore(("FB_SimpleLogic (FB_SimpleLogic.TcPOU)"))
-        AsyncOut[("Async_Effect_Queue (GVL 系统状态输出)")]
-        AsyncIn[("Async_Input_Queue (GVL合法指令输入)")]
+        MonoidMerge{"FC_CombineEffects (Monoid 折叠)"}
+        AsyncOut[("Async_Effect_Queue (输出 Effect Monoid)")]
+        AsyncIn[("Async_Input_Queue (合法 Effect 输入)")]
         Hardware[(物理执行机构/传感器)]
         
         Hardware -.->|高频物理映射| SafeCore
         SafeCore -->|硬件直控| Hardware
-        SafeCore -->|抛出副作用进行收集| AsyncOut
-        AsyncIn -->|由路由扔给业务核心| SafeCore
+        SafeCore -->|产生孤立的副作用| MonoidMerge
+        MonoidMerge -->|结合律打包成 Monoid| AsyncOut
+        AsyncIn -->|提取 Effect 供核心评判| SafeCore
     end
 
     %% 中间件层
