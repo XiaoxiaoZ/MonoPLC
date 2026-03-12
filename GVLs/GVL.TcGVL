@@ -15,7 +15,7 @@ VAR_GLOBAL
     Async_Queue_Tail         : INT := 0; // Task B 专用读指针
 	
 	// --- 跨任务输入桥梁 ---
-    // Task B 负责写入 (收到 REST 请求时置为 TRUE)
+    // Task B 负责写入 (收到 MQTT 消息时置为 TRUE)
     // Task A 负责读取并清零 (消费消息)
     Inbox_IoT_SoftStop : BOOL := FALSE;
 	Inbox_IoT_SoftStart: BOOL := FALSE;

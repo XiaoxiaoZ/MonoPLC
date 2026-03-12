@@ -18,14 +18,6 @@ VAR
     Final_Payload    : STRING[64];
 	
 	System_En : BOOL := TRUE; // 系统使能位，只有在 TRUE 时才响应自动控制
-	
-	// 可变参数 (Setpoints)
-	TempHighLimit : REAL := 80.0;
-	TempLowLimit  : REAL := 70.0;
-	
-	// Heartbeat counter: emit periodic status even during stable periods
-	Tick_Counter : INT := 0;
-	HEARTBEAT_INTERVAL : INT := 100; // ~1 second (PLC cycle is ~10ms)
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -43,7 +35,7 @@ IF Input_Event.EType = EFF_IOT_CMD_STOP THEN
 	Final_Payload := CONCAT(Final_Payload, '] Forced Stop: Valve Closed');
 	
 	Eff_Valve   := FC_ValveEffect('CoolingValve', FALSE);
-	Eff_Network := FC_IoTEffect('system/status', Final_Payload);
+	Eff_Network := FC_IoTEffect('mqtt/status', Final_Payload);
 	Effects_Out := FC_CombineEffects(Eff_Valve, Eff_Network);
 	
 ELSIF Input_Event.EType = EFF_IOT_CMD_START AND NOT System_En THEN
@@ -54,7 +46,7 @@ ELSIF Input_Event.EType = EFF_IOT_CMD_START AND NOT System_En THEN
 	Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Temp));
 	Final_Payload := CONCAT(Final_Payload, '] System Started');
 	
-	Eff_Network := FC_IoTEffect('system/status', Final_Payload);
+	Eff_Network := FC_IoTEffect('mqtt/status', Final_Payload);
 	Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
 
 ELSIF Input_Event.EType = EFF_IOT_CMD_RESET THEN
@@ -64,25 +56,7 @@ ELSIF Input_Event.EType = EFF_IOT_CMD_RESET THEN
 	Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Temp));
 	Final_Payload := CONCAT(Final_Payload, '] System Reset Acknowledged');
 	
-	Eff_Network := FC_IoTEffect('system/status', Final_Payload);
-	Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
-
-ELSIF Input_Event.EType = EFF_SETPOINT_CHANGE THEN
-	IF Input_Event.Target = 'TempHighLimit' THEN
-		TempHighLimit := Input_Event.Value;
-		Final_Payload := CONCAT('TempHighLimit changed to ', REAL_TO_STRING(Input_Event.Value));
-	ELSIF Input_Event.Target = 'TempLowLimit' THEN
-		TempLowLimit := Input_Event.Value;
-		Final_Payload := CONCAT('TempLowLimit changed to ', REAL_TO_STRING(Input_Event.Value));
-	ELSE
-		Final_Payload := CONCAT('Unknown Setpoint: ', Input_Event.Target);
-	END_IF;
-	
-	Final_Payload := CONCAT('[', Current_Time_Str);
-	Final_Payload := CONCAT(Final_Payload, '] PARAM: ');
-	Final_Payload := CONCAT(Final_Payload, Final_Payload);
-	
-	Eff_Network := FC_IoTEffect('system/status', Final_Payload);
+	Eff_Network := FC_IoTEffect('mqtt/status', Final_Payload);
 	Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
 
 ELSIF Input_Event.EType = EFF_SYSTEM_TICK THEN
@@ -91,7 +65,7 @@ ELSIF Input_Event.EType = EFF_SYSTEM_TICK THEN
 	// ============================================
 	IF System_En THEN
 		// 边缘触发：低于 70 度的瞬间动作 (正常自动冷却完成)
-		IF Current_Temp < TempLowLimit AND Is_Cooling THEN
+		IF Current_Temp < 70.0 AND Is_Cooling THEN
 			Is_Cooling := FALSE;
 			Final_Payload := CONCAT('[', Current_Time_Str);
 			Final_Payload := CONCAT(Final_Payload, ' | T=');
@@ -99,11 +73,11 @@ ELSIF Input_Event.EType = EFF_SYSTEM_TICK THEN
 			Final_Payload := CONCAT(Final_Payload, '] Auto: Valve Closed');
 			
 			Eff_Valve   := FC_ValveEffect('CoolingValve', FALSE);
-			Eff_Network := FC_IoTEffect('system/status', Final_Payload);
+			Eff_Network := FC_IoTEffect('mqtt/status', Final_Payload);
 			Effects_Out := FC_CombineEffects(Eff_Valve, Eff_Network);
 		
 		// 边缘触发：跨越 80 度的瞬间动作
-		ELSIF Current_Temp > TempHighLimit AND NOT Is_Cooling THEN
+		ELSIF Current_Temp > 80.0 AND NOT Is_Cooling THEN
 			Is_Cooling := TRUE;
 			Final_Payload := CONCAT('[', Current_Time_Str);
 			Final_Payload := CONCAT(Final_Payload, ' | T=');
@@ -111,31 +85,17 @@ ELSIF Input_Event.EType = EFF_SYSTEM_TICK THEN
 			Final_Payload := CONCAT(Final_Payload, '] Valve Opened');
 			
 			Eff_Valve   := FC_ValveEffect('CoolingValve', TRUE);
-			Eff_Network := FC_IoTEffect('system/status', Final_Payload);
+			Eff_Network := FC_IoTEffect('mqtt/status', Final_Payload);
 			Effects_Out := FC_CombineEffects(Eff_Valve, Eff_Network);
 		
-		// 结合外部时钟与持续高温产生报警 (真正的 EFF_ALARM)
-		ELSIF Current_Temp > TempHighLimit AND Is_Cooling THEN
+		// 结合外部时钟与持续高温产生报警
+		ELSIF Current_Temp > 80.0 AND Is_Cooling THEN
 			Final_Payload := CONCAT('[', Current_Time_Str);
 			Final_Payload := CONCAT(Final_Payload, ' | T=');
 			Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Temp));
 			Final_Payload := CONCAT(Final_Payload, '] STILL TOO HOT!');
 			
-			Effects_Out := FC_AlarmEffect('OverTemp', Final_Payload, 1.0);
-			Eff_Network := FC_IoTEffect('system/status', Final_Payload);
-			Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
-		END_IF;
-		
-		// Heartbeat: emit periodic status snapshot even during stable periods
-		Tick_Counter := Tick_Counter + 1;
-		IF Tick_Counter >= HEARTBEAT_INTERVAL THEN
-			Tick_Counter := 0;
-			Final_Payload := CONCAT('[', Current_Time_Str);
-			Final_Payload := CONCAT(Final_Payload, ' | T=');
-			Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Temp));
-			Final_Payload := CONCAT(Final_Payload, '] Heartbeat: System Stable');
-			
-			Eff_Network := FC_IoTEffect('system/status', Final_Payload);
+			Eff_Network := FC_IoTEffect('mqtt/alarm', Final_Payload);
 			Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
 		END_IF;
 	END_IF;
