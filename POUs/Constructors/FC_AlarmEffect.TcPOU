@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_AlarmEffect" Id="{a1b2c3d4-e5f6-7890-abcd-ef0123456789}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_AlarmEffect : DUT_Effect_Monoid
+VAR_INPUT
+    AlarmSource : STRING[32];   // 报警来源 (如 'OverTemp')
+    Message     : STRING[64];   // 报警描述
+    Severity    : REAL := 1.0;  // 严重程度 (1.0 = 普通, 2.0 = 严重)
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[FC_AlarmEffect.Count := 1;
+FC_AlarmEffect.Effects[1].EType   := EFF_ALARM;
+FC_AlarmEffect.Effects[1].Target  := AlarmSource;
+FC_AlarmEffect.Effects[1].Payload := Message;
+FC_AlarmEffect.Effects[1].Value   := Severity;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
