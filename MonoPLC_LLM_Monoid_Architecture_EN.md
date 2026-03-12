@@ -44,10 +44,10 @@ flowchart TD
     %% Intelligent Supervisory Layer
     subgraph Layer_AI ["3. Supervisory & Decision Layer"]
         Ollama["Ollama Inference Engine\n(config.py OLLAMA_URL)"]
-        WebUI["Human Operator Frontend\n(static/ index.html)"]
+        WebUI["Human Operator Frontend\n(static/app.js)"]
         
         Router_LLM <==>|Prompt IN / Effect Intent OUT| Ollama
-        Router_UI <==>|HTTP API / Websocket| WebUI
+        Router_UI <==>|HTTP API (Polling)| WebUI
     end
 
     classDef plcCore fill:#e1f5fe,stroke:#03a9f4,stroke-width:2px;
