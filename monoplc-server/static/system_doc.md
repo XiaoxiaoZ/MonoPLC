@@ -54,4 +54,4 @@ When you use `EFF_SETPOINT_CHANGE (9)`, the `target` you are allowed to issue mu
     *   **Default Reference**: `20.0`
     *   **When to use**: When the user requests to change the system's idle shutdown lower limit area.
 
-If you generate a `target` that is not listed above, the PLC may not recognize it and the instruction will have no effect. Always use one of the listed target names.
+If you generate a `target` that is not listed, the instruction will be silently dropped by the middleware.
