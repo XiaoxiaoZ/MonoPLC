@@ -106,8 +106,10 @@ app.include_router(status.router)
 app.include_router(buttons.router)
 app.include_router(llm.router)
 
+import os
 # Mount Web GUI Dashboard
-app.mount("/gui", StaticFiles(directory="static", html=True), name="static")
+base_dir = os.path.dirname(os.path.abspath(__file__))
+app.mount("/gui", StaticFiles(directory=os.path.join(base_dir, "static"), html=True), name="static")
 
 @app.get("/", tags=["Root"])
 async def root():
