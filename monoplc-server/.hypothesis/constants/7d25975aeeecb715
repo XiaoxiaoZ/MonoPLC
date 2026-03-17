@@ -1,0 +1,4 @@
+# file: C:\Users\xizh0002\AppData\Roaming\Python\Python312\site-packages\pyads\pyads_ex.py
+# hypothesis_version: 6.151.9
+
+[b'\x00\x00\x00\x00', b'\x00\x00\x0c\x00', b'\x00\x04\x07', b'\x02\x00', b'\x03f\x14q\x00\x00\x00\x00\x01\x00\x00\x00', b'\x03f\x14q\x00\x00\x00\x00\x06\x00\x00\x00', b'\x04\x00\x00', b'\x05\x00', b'\x07\x00', b'\r\x00', 128, 398, '\x00', '.', '64bit', '<', '<2s', '<H', '<I', '>12s', '>2s', '>4s', '>6B', '>B', 'ADSError: ', 'PyCArrayType', 'TWINCAT3DIR', 'TcAdsDll.dll', '\\..', '\\Common32', '\\Common64', 'adslib.so', 'ctypes.CDLL', 'ctypes.WinDLL', 'libTcAdsDll.so', 'utf-16-le', 'utf-8', 'value', '{} ({}). ']

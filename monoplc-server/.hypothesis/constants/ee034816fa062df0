@@ -1,0 +1,4 @@
+# file: C:\Users\xizh0002\AppData\Roaming\Python\Python312\site-packages\pytest_docker\plugin.py
+# hypothesis_version: 6.151.9
+
+[' -f "{}"', ' -p "{}" {}', '--container-scope', '127.0.0.1', ':', 'DOCKER_HOST', '^tcp://(.+?):\\d+$', 'docker compose', 'docker-compose.yml', 'down -v', 'port %s %d', 'pytest{}', 'session', 'tests', 'unix://', 'up --build -d', 'utf-8']

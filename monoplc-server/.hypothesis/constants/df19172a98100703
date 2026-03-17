@@ -1,0 +1,4 @@
+# file: D:\HV-filesync\xizh0002\Documents\TcXaeShell\MonoPLC\MonoPLC\SideEffectPLC\.claude\worktrees\vibrant-ritchie\monoplc-server\state_store.py
+# hypothesis_version: 6.151.9
+
+[1000.0, 'e_type', 'effect_index', 'payload', 'product_alarm_count', 'product_effect_count', 'state_keys', 'target', 'timestamp', 'value']
