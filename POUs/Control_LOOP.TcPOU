@@ -1,9 +1,13 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <POU Name="Control_LOOP" Id="{5f40ff20-e9a3-4c62-9625-a0cac8de4d78}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM Control_LOOP
 VAR
-	Inst_Logic     : FB_SimpleLogic;       // 纯净的核心业务逻辑
+	Inst_Logic     : FB_SimpleLogic;       // 纯净的温度业务逻辑
+	Inst_HumLogic  : FB_HumidityLogic;     // 纯净的湿度业务逻辑 (新增)
+	
+	Global_Climate : DUT_Climate_Monoid;   // 全局 Product Monoid (气候大一统状态)
+	Local_Climate  : DUT_Climate_Monoid;   // 局部 Product Monoid
 	
 	// --- 事件总线 (The Event Bus) ---
 	// 本地循环队列，大小 200，足以容纳单周期内爆发的所有事件
@@ -63,37 +67,57 @@ WHILE Q_Tail <> Q_Head DO
 	Q_Tail := (Q_Tail + 1) MOD 200;
 	
 	// --- 事件路由 (The Router/Dispatcher) ---
-	IF Current_Event.EType = EFF_VALVE_CTRL THEN
-		// 路由类型 1：[物理输出指令] -> 硬件映射
-		IF Current_Event.Target = 'CoolingValve' THEN
-			GVL.Net_ValveCmd := (Current_Event.Value > 0.5);
-		END_IF;
-		
-	ELSIF Current_Event.EType = EFF_IOT_PUB OR Current_Event.EType = EFF_ALARM THEN
-		// 路由类型 2：[跨任务异步指令] -> 发送至 Task B
+	
+	// 路由类型 1 & 2：物理映射与日志抛出
+	// 无论是物理动作 (VALVE) 还是通讯 (PUB/ALARM)，都须抛给上层 (Python) 作为 Monoid 的重建依据
+	IF Current_Event.EType = EFF_VALVE_CTRL OR 
+	   Current_Event.EType = EFF_IOT_PUB OR 
+	   Current_Event.EType = EFF_ALARM THEN
+	   
 		Next_Async_Head := (gvl.Async_Queue_Head + 1) MOD 100;
 		IF Next_Async_Head <> gvl.Async_Queue_Tail THEN
 			gvl.Async_Effect_Queue[gvl.Async_Queue_Head] := Current_Event;
 			gvl.Async_Queue_Head := Next_Async_Head;
 		END_IF
-		
-	ELSIF Current_Event.EType = EFF_SYSTEM_TICK OR 
+	END_IF
+	
+	IF Current_Event.EType = EFF_VALVE_CTRL THEN
+		// 硬件映射：只处理特定的底层物理阀门
+		IF Current_Event.Target = 'CoolingValve' THEN
+			GVL.Net_ValveCmd := (Current_Event.Value > 0.5);
+		END_IF;
+	END_IF
+	
+	// 路由类型 3：业务逻辑计算 (The Brain Simulation)
+	IF Current_Event.EType = EFF_SYSTEM_TICK OR 
 		  Current_Event.EType = EFF_IOT_CMD_START OR 
 		  Current_Event.EType = EFF_IOT_CMD_STOP OR 
 		  Current_Event.EType = EFF_IOT_CMD_RESET OR
-		  Current_Event.EType = EFF_SETPOINT_CHANGE THEN
-		// 路由类型 3：[业务逻辑激励源] -> 送入纯函数大脑
-		// 不管是按键被按下了，还是只是这一毫秒的时间流逝了，全都丢给它去算！
+		  Current_Event.EType = EFF_SETPOINT_CHANGE OR
+		  (Current_Event.EType = EFF_VALVE_CTRL AND Current_Event.Target = 'Humidifier') THEN
+		  
+		// 入参温度控制纯函数
 		Inst_Logic(
 			Current_Temp := GVL.Net_Temperature,
 			Current_Time_Str := Current_Time_Str_Val,
-			Input_Event := Current_Event // <--- 每次只喂一粒单颗的红药丸
+			Input_Event := Current_Event
 		);
 		
-		// 收获果实
+		// 入参数湿度控制纯函数 (专为吸收加湿指令和自然蒸发环境而设计)
+		Inst_HumLogic(
+			Input_Event := Current_Event
+		);
+		
+		// 获取最新生成的结果代数
 		Total_Monoid := Inst_Logic.Effects_Out;
 		
-		// 革命性的一步：把运算导致的新动作，重新塞回事件总线尾部排队！(Event Recursion)
+		Local_Climate.Temp := Inst_Logic.Effects_Out;
+		Local_Climate.Hum  := Inst_HumLogic.Effects_Out;
+		
+		// 代数结合：合成大一统的气候状态字典
+		Global_Climate := FC_CombineClimate(Global_Climate, Local_Climate);
+		
+		// 事件递归：由内力产生的副作用再次回填进入总线网络
 		FOR i := 1 TO Total_Monoid.Count DO
 			Next_Head := (Q_Head + 1) MOD 200;
 			IF Next_Head <> Q_Tail THEN

@@ -1,0 +1,4 @@
+# file: C:\Users\xizh0002\AppData\Roaming\Python\Python312\site-packages\pyads\structs.py
+# hypothesis_version: 6.151.9
+
+[0.0001, 10000.0, 256, '.', ': ', '<AmsAddress {}:{}>', 'AttribUnion', 'b', 'build', 'cbLength', 'cbSampleSize', 'commentLength', 'data', 'dataType', 'dwChangeFilter', 'entryLength', 'flags', 'hNotification', 'iGroup', 'iOffs', 'iOffset', 'ms', 'nCycleTime', 'nMaxDelay', 'nSymSize', 'nSymbols', 'nTimeStamp', 'nTransMode', 'nameLength', 'netId', 'no valid netid', 'port', 'revision', 'size', 'stringBuffer', 'typeLength', 'version', 'windows-1252']

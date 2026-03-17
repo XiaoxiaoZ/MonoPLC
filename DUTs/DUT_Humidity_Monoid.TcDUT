@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="DUT_Humidity_Monoid" Id="{1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d}">
+    <Declaration><![CDATA[// 模拟加法幺半群：存储累计喷洒量的单维度载体
+TYPE DUT_Humidity_Monoid :
+STRUCT
+	SprayAmount : REAL := 0.0; // The total volume of moisture to spray
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

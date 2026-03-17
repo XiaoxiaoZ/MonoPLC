@@ -19,10 +19,19 @@
     <CompilerDefines>VISU_USEPROPERTYINFO</CompilerDefines>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DUTs\DUT_Climate_Monoid.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\DUT_Effect.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\DUT_Effect_Monoid.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DUT_Effect_Monoid_1.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DUT_Humidity_Monoid.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\ENUM_Effect_Type.TcDUT">
@@ -63,6 +72,18 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Control_LOOP.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Monoid\FC_CombineClimate.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Monoid\FC_CombineHumidity.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Monoid\FC_EmptyHumidity.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\PLCLogic\FB_HumidityLogic.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\SideEffect_LOOP.TcPOU">

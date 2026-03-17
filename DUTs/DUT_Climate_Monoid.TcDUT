@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="DUT_Climate_Monoid" Id="{2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e}">
+    <Declaration><![CDATA[// 这是一个典型的 Product Monoid, 将自由幺半群 (Effect) 和 加法幺半群 (Humidity) 结合在一起
+TYPE DUT_Climate_Monoid :
+STRUCT
+	Temp : DUT_Effect_Monoid;
+	Hum  : DUT_Humidity_Monoid;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

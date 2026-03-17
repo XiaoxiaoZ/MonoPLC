@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_HumidityLogic" Id="{6f7a8b9c-0d1e-2f3a-4b5c-6d7e8f90a1b2}" SpecialFunc="None">
+    <Declaration><![CDATA[// 这是一个专门处理湿度控制的纯函数，完全与温度控制隔离
+FUNCTION_BLOCK FB_HumidityLogic
+VAR_INPUT
+	Input_Event : DUT_Effect;
+END_VAR
+VAR_OUTPUT
+	Effects_Out : DUT_Humidity_Monoid;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 初始化为加法幺元 (Identity)
+Effects_Out := FC_EmptyHumidity();
+
+// 根据事件独立演化状态
+IF Input_Event.EType = EFF_VALVE_CTRL AND Input_Event.Target = 'Humidifier' THEN
+	// 如果接收到了明确要求打开加湿器的事件，直接喷洒要求的量
+	Effects_Out.SprayAmount := LREAL_TO_REAL(Input_Event.Value);
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
