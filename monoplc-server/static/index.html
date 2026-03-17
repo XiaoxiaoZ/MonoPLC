@@ -63,6 +63,11 @@
                         <button class="btn btn-warning" id="btn-reset"><i class="fa-solid fa-rotate-right"></i>
                             Reset</button>
                     </div>
+
+                    <h3 style="margin-top: 1.5rem; font-size: 0.9em; opacity: 0.8; margin-bottom: 0.5rem;"><i class="fa-solid fa-droplet" style="color: #60a5fa;"></i> Climate Control</h3>
+                    <div class="btn-group">
+                        <button class="btn" id="btn-spray-water" style="width: 100%; background: rgba(96, 165, 250, 0.2); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.4);"><i class="fa-solid fa-shower"></i> Manual Spray Water (+5ml)</button>
+                    </div>
                 </section>
 
                 <!-- Log Stream -->
@@ -227,6 +232,41 @@
 
 
 
+            <!-- Full Width Card: TwinCAT Climate Product Monoid -->
+            <div class="glass-card algebra-card" style="margin-top: 1.5rem;">
+                <div class="algebra-card-header">
+                    <div>
+                        <h3><i class="fa-solid fa-cloud-sun-rain"></i> PLC-Native Climate Product Monoid</h3>
+                        <p class="algebra-subtitle">Advantage #3 — Zero-knowledge Extensibility (A.Temp⊕B.Temp, A.Hum⊕B.Hum)</p>
+                    </div>
+                </div>
+
+                <div class="algebra-result" style="margin-top: 1rem; display: flex; gap: 24px;">
+                    <div class="tt-state-container" style="flex: 1;">
+                        <div class="formula-label" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-wind"></i> Temperature (Free Monoid)</div>
+                        <div class="product-views" style="margin-top: 1rem;">
+                            <div class="product-view-card view-state">
+                                <div class="view-icon"><i class="fa-solid fa-list-ol"></i></div>
+                                <div class="view-label">Total Events Streamed</div>
+                                <div class="view-value" id="plc-temp-count">0</div>
+                                <div class="view-sublabel">effects accumulated</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tt-state-container" style="flex: 1;">
+                        <div class="formula-label" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-droplet"></i> Humidity (Sum Monoid)</div>
+                        <div class="product-views" style="margin-top: 1rem;">
+                            <div class="product-view-card view-count">
+                                <div class="view-icon"><i class="fa-solid fa-plus"></i></div>
+                                <div class="view-label">Total Spray Volume</div>
+                                <div class="view-value" id="plc-hum-spray">0.00</div>
+                                <div class="view-sublabel">ml (PLC native variable)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Full Width Card: Time-Travel Playback -->
             <div class="glass-card algebra-card" style="margin-top: 1.5rem;">
                 <div class="algebra-card-header">
@@ -276,6 +316,12 @@
                                 <div class="view-label">Total Alarms</div>
                                 <div class="view-value" id="tt-alarm-count">—</div>
                                 <div class="view-sublabel">intercepted</div>
+                            </div>
+                            <div class="product-view-card view-spray" style="border-left-color: #60a5fa;">
+                                <div class="view-icon" style="color: #60a5fa;"><i class="fa-solid fa-shower"></i></div>
+                                <div class="view-label">Total Spray</div>
+                                <div class="view-value" id="tt-spray-ml">—</div>
+                                <div class="view-sublabel">ml accumulated</div>
                             </div>
                         </div>
                     </div>

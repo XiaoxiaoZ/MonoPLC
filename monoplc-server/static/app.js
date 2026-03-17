@@ -177,6 +177,10 @@ document.getElementById('btn-reset').addEventListener('click', () => {
     fetch(`${API_BASE}/buttons/reset`, { method: 'POST' });
 });
 
+document.getElementById('btn-spray-water').addEventListener('click', () => {
+    fetch(`${API_BASE}/buttons/spray`, { method: 'POST' });
+});
+
 document.getElementById('btn-analyze').addEventListener('click', async () => {
     const btn = document.getElementById('btn-analyze');
     const icon = btn.querySelector('i');
@@ -439,10 +443,13 @@ async function fetchHistoricalState(isoTimeStr) {
             const data = await res.json();
             ttResult.style.display = 'block';
             
-            // Render Product Monoid 3-dimensional state dynamically
+            // Render Product Monoid N-dimensional state dynamically
             ttStateKeys.textContent = Object.keys(data.state).length;
             ttEffectCount.textContent = data.effect_count;
             ttAlarmCount.textContent = data.alarm_count;
+            if (document.getElementById('tt-spray-ml')) {
+                document.getElementById('tt-spray-ml').textContent = (data.total_spray_ml || 0).toFixed(2);
+            }
             
             // Update performance info
             ttMethodText.textContent = data.method;
@@ -462,3 +469,25 @@ async function fetchHistoricalState(isoTimeStr) {
         console.error("Time-Travel fetch failed", e);
     }
 }
+
+// ----------------------------------------------------
+// Algebra Demo: PLC Climate Product Monoid Visualization
+// ----------------------------------------------------
+async function fetchClimateMonoid() {
+    try {
+        const res = await fetch(`${API_BASE}/algebra/climate`);
+        if (res.ok) {
+            const data = await res.json();
+            const tempVal = document.getElementById('plc-temp-count');
+            const humVal = document.getElementById('plc-hum-spray');
+            if (tempVal && humVal) {
+                tempVal.textContent = data.python_reconstructed_state.total_effects_consumed || 0;
+                humVal.textContent = data.plc_native_climate.humidity_spray_amount.toFixed(2);
+            }
+        }
+    } catch (e) {
+        // silently fail on UI
+    }
+}
+setInterval(fetchClimateMonoid, 1000);
+fetchClimateMonoid();

@@ -211,3 +211,23 @@ class PLCBridge:
                 logger.info("Input queue sync: queue is empty, ready")
         except Exception as e:
             logger.error("Input queue sync failed: %s", e)
+
+    # ------------------------------------------------------------------
+    # Phase 3: Visualization & Demostration Exception
+    # ------------------------------------------------------------------
+
+    def read_plc_humidity(self) -> float:
+        """
+        Reads the purely PLC-side Product Monoid accumulation for Humidity.
+        This breaks the "Event-Only" constraint purely for UI visualization
+        to prove that the PLC is correctly accumulating the Sum Monoid natively.
+        """
+        if not self.is_connected:
+            return 0.0
+
+        try:
+            val = self._plc.read_by_name("Control_LOOP.Global_Climate.Hum.SprayAmount", pyads.PLCTYPE_REAL)
+            return float(val)
+        except Exception as e:
+            logger.warning("read_plc_humidity failed: %s. Is the new PLC code compiled?", e)
+            return 0.0

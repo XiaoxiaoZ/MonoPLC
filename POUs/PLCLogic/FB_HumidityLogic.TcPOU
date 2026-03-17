@@ -15,10 +15,7 @@ END_VAR
 Effects_Out := FC_EmptyHumidity();
 
 // 根据事件独立演化状态
-IF Input_Event.EType = EFF_SYSTEM_TICK THEN
-	// 每一毫秒的自然蒸发流失，我们需要喷洒 0.01 ml 的水份来对抗环境
-	Effects_Out.SprayAmount := 0.01;
-ELSIF Input_Event.EType = EFF_VALVE_CTRL AND Input_Event.Target = 'Humidifier' THEN
+IF Input_Event.EType = EFF_VALVE_CTRL AND Input_Event.Target = 'Humidifier' THEN
 	// 如果接收到了明确要求打开加湿器的事件，直接喷洒要求的量
 	Effects_Out.SprayAmount := LREAL_TO_REAL(Input_Event.Value);
 END_IF

@@ -24,7 +24,7 @@ from typing import Any, Optional
 from models import Effect
 from plc_bridge import PLCBridge
 from config import settings
-from monoid import MWStateMonoid, SumMonoid, ProductMonoid
+from monoid import MWStateMonoid, SumMonoid, DictProductMonoid, MonoidComponent
 from homomorphism import phi, create_monoplc_bridge, MonoidHomomorphism
 from models import EffectType
 from fold_engine import (
@@ -38,18 +38,24 @@ from fold_engine import (
 logger = logging.getLogger(__name__)
 
 
-def _map_to_product(effect: Effect) -> tuple:
-    """
-    Compounds the fundamental phi() homomorphism with metadata counters
-    to produce a Product Tuple for the Product Monoid.
-    """
-    if effect.e_type in (EffectType.EFF_SYSTEM_TICK, EffectType.EFF_NONE):
-        return ({}, 0, 0)
-    
-    state_part = phi([effect])
-    count_part = 1
-    alarm_part = 1 if effect.e_type == EffectType.EFF_ALARM else 0
-    return (state_part, count_part, alarm_part)
+def map_state(effect: Effect) -> dict:
+    return {} if effect.e_type in (EffectType.EFF_SYSTEM_TICK, EffectType.EFF_NONE) else phi([effect])
+
+def map_count(effect: Effect) -> int:
+    return 0 if effect.e_type in (EffectType.EFF_SYSTEM_TICK, EffectType.EFF_NONE) else 1
+
+def map_alarm(effect: Effect) -> int:
+    return 1 if effect.e_type == EffectType.EFF_ALARM else 0
+
+def map_spray(effect: Effect) -> float:
+    return float(effect.value) if effect.e_type == EffectType.EFF_VALVE_CTRL and effect.target == "Humidifier" else 0.0
+
+PRODUCT_COMPONENTS = [
+    MonoidComponent(name="state", monoid=MWStateMonoid(), map_fn=map_state),
+    MonoidComponent(name="effect_count", monoid=SumMonoid(), map_fn=map_count),
+    MonoidComponent(name="alarm_count", monoid=SumMonoid(), map_fn=map_alarm),
+    MonoidComponent(name="total_spray_ml", monoid=SumMonoid(), map_fn=map_spray),
+]
 
 
 class StateStore:
@@ -68,7 +74,7 @@ class StateStore:
 
         # --- Design D: algebraic bridge ---
         self._mw_monoid = MWStateMonoid()
-        self._product_monoid = ProductMonoid(self._mw_monoid, SumMonoid(), SumMonoid())
+        self._product_monoid = DictProductMonoid(PRODUCT_COMPONENTS)
         self._bridge_hom = create_monoplc_bridge()
 
         # --- Live state (always up-to-date) ---
@@ -81,7 +87,7 @@ class StateStore:
         self._checkpoints: list[Checkpoint] = []
         
         # Engine is injected with the purely generic Monoid and Mapper
-        self._fold_engine = FoldEngine(self._product_monoid, _map_to_product)
+        self._fold_engine = FoldEngine(self._product_monoid, self._product_monoid.map_effect)
         self._effects_since_checkpoint: int = 0
 
     # ------------------------------------------------------------------
@@ -93,11 +99,8 @@ class StateStore:
         Returns the currently reconstructed system state snapshot.
         The returned dict is a flat view suitable for REST API and LLM consumption.
         """
-        state_dict, count, alarms = self._state_data
-        flat: dict[str, Any] = dict(state_dict)
+        flat: dict[str, Any] = dict(self._state_data)
         flat["total_effects_consumed"] = self._total_effects_consumed
-        flat["product_effect_count"] = count
-        flat["product_alarm_count"] = alarms
         return flat
 
     def get_logs(self, n: int = 20) -> list[dict]:
@@ -138,7 +141,7 @@ class StateStore:
             {
                 "timestamp": cp.timestamp.isoformat(),
                 "effect_index": cp.effect_index,
-                "state_keys": len(cp.state[0]),  # cp.state[0] is the StateDict
+                "state_keys": len(cp.state.get("state", {})),
             }
             for cp in self._checkpoints
         ]
@@ -156,7 +159,7 @@ class StateStore:
         return {
             "timestamp": cp.timestamp.isoformat(),
             "effect_index": cp.effect_index,
-            "state_keys": len(cp.state[0]),
+            "state_keys": len(cp.state.get("state", {})),
         }
 
     # ------------------------------------------------------------------
@@ -192,7 +195,7 @@ class StateStore:
         self._total_effects_consumed += 1
 
         # Use the compound Product mapper, then combine into product state
-        mapped = _map_to_product(effect)
+        mapped = self._product_monoid.map_effect(effect)
         self._state_data = self._product_monoid.combine(self._state_data, mapped)
 
         # Design C: auto-checkpoint every N effects

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="DUT_Effect_Monoid_1" Id="{5e1117b6-445b-4950-8c08-87d38c00ad7a}">
+    <Declaration><![CDATA[TYPE DUT_Effect_Monoid_1 :
+STRUCT
+	Count   : INT := 0;
+    Effects : ARRAY[1..20] OF DUT_Effect;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

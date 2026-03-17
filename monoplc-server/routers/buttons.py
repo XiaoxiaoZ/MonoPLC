@@ -41,3 +41,19 @@ async def button_start():
 async def button_reset():
     """Construct EFF_IOT_CMD_RESET Effect and write to Async_Input_Queue."""
     return _push_button_effect(EffectType.EFF_IOT_CMD_RESET, "Reset")
+
+
+@router.post("/spray", summary="Press Manual Spray Button")
+async def button_spray():
+    """Construct EFF_VALVE_CTRL Effect and write to Async_Input_Queue."""
+    from main import app_state
+
+    effect = Effect(
+        e_type=EffectType.EFF_VALVE_CTRL,
+        target="Humidifier",
+        value=5.0,
+    )
+    success = app_state.plc_bridge.push_input_effect(effect)
+    if not success:
+        raise HTTPException(status_code=503, detail="PLC input queue is full or ADS not connected")
+    return {"status": "ok", "button": "Spray Water", "effect": effect.model_dump()}

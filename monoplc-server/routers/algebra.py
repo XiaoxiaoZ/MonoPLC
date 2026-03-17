@@ -36,14 +36,11 @@ async def state_at(
     """
     from main import app_state
 
-    # Strip tzinfo because local Python uses naive datetime.now()
     ts = datetime.fromisoformat(t).replace(tzinfo=None)
     result = app_state.state_store.state_at(ts)
     d = asdict(result)
-    state_dict, count, alarms = d.pop("state")
-    d["state"] = state_dict
-    d["effect_count"] = count
-    d["alarm_count"] = alarms
+    state_dict = d.pop("state")
+    d.update(state_dict)
     return d
 
 
@@ -95,19 +92,11 @@ async def fold_compare(
     result = app_state.state_store.fold_compare(workers)
     d = asdict(result)
     
-    seq_dict, seq_count, seq_alarms = d.pop("sequential")
-    par_dict, par_count, par_alarms = d.pop("parallel")
+    seq_state = d.pop("sequential")
+    par_state = d.pop("parallel")
     
-    d["sequential"] = {
-        "state": seq_dict,
-        "effect_count": seq_count,
-        "alarm_count": seq_alarms
-    }
-    d["parallel"] = {
-        "state": par_dict,
-        "effect_count": par_count,
-        "alarm_count": par_alarms
-    }
+    d["sequential"] = seq_state
+    d["parallel"] = par_state
     
     return d
 
@@ -245,16 +234,12 @@ async def incremental_compare():
 
     return {
         "incremental_result": {
-            "state_keys": len(result.incremental_result[0]),
-            "state": result.incremental_result[0],
-            "effect_count": result.incremental_result[1],
-            "alarm_count": result.incremental_result[2],
+            "state_keys": len(result.incremental_result.get("state", {})),
+            **result.incremental_result
         },
         "full_result": {
-            "state_keys": len(result.full_result[0]),
-            "state": result.full_result[0],
-            "effect_count": result.full_result[1],
-            "alarm_count": result.full_result[2],
+            "state_keys": len(result.full_result.get("state", {})),
+            **result.full_result
         },
         "identical": result.identical,
         "incremental_time_ms": result.incremental_time_ms,
@@ -286,4 +271,33 @@ async def log_range():
         "start_time": log[0].timestamp.isoformat(),
         "end_time": log[-1].timestamp.isoformat(),
         "effect_count": len(log),
+    }
+
+# ------------------------------------------------------------------
+# Phase 3: Climate Product Monoid Visualization
+# ------------------------------------------------------------------
+
+@router.get(
+    "/climate",
+    summary="Visualize the PLC-native Climate Product Monoid (Phase 3)",
+)
+async def get_climate_monoid():
+    """
+    Returns the purely PLC-accumulated Humidity Monoid alongside the Python-reconstructed state.
+    Proves that two entirely different domains (Concat and Addition) can be composed
+    into a single Product Monoid natively on the PLC.
+    """
+    from main import app_state
+    
+    # Read the real-time Accumulation native in PLC
+    spray_amount = app_state.plc_bridge.read_plc_humidity()
+    
+    # Read the real-time Python state reconstruction
+    python_state = app_state.state_store.get_state()
+    
+    return {
+        "plc_native_climate": {
+            "humidity_spray_amount": spray_amount,
+        },
+        "python_reconstructed_state": python_state
     }

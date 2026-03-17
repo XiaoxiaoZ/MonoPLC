@@ -12,7 +12,8 @@ automatically bridges the two without either side knowing about the other.
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypeVar, runtime_checkable
+from dataclasses import dataclass
+from typing import Any, Callable, Protocol, TypeVar, runtime_checkable
 
 from models import Effect
 
@@ -128,30 +129,42 @@ class MaxMonoid:
 
 
 # ---------------------------------------------------------------------------
-# Product Monoid — Component-wise composition of N sub-monoids
+# Named Product Monoid — Component-wise composition of N sub-monoids
 # ---------------------------------------------------------------------------
 
-class ProductMonoid:
+@dataclass
+class MonoidComponent:
+    """A dimension in the Product Monoid, bundled with its homomorphism."""
+    name: str
+    monoid: Monoid
+    map_fn: Callable[[Effect], Any]
+
+
+class DictProductMonoid:
     """
-    Given Monoids M₁, M₂, ..., Mₙ, the Product Monoid is:
-
-        (M₁ × M₂ × ... × Mₙ,  component-wise combine,  (ε₁, ε₂, ..., εₙ))
-
-    combine((a₁,...,aₙ), (b₁,...,bₙ)) = (m₁.combine(a₁,b₁), ..., mₙ.combine(aₙ,bₙ))
-    empty() = (m₁.empty(), ..., mₙ.empty())
-
-    Key advantage: ONE fold pass produces N independent aggregation views.
-    Each sub-monoid is designed independently — zero coupling between dimensions.
+    Given Monoids M₁, M₂, ..., Mₙ, the Product Monoid is component-wise composition.
+    
+    Unlike a Tuple Product Monoid, this uses dictionaries keyed by dimension name.
+    This guarantees TOTAL DECOUPLING: you can add a new MonoidComponent here,
+    and ALL downstream algorithms (Parallel Fold, Time-Travel, Checkpointing)
+    and API endpoints will automatically inherit and serve the new dimension 
+    without any code changes.
     """
 
-    def __init__(self, *monoids):
-        self.monoids = monoids
+    def __init__(self, components: list[MonoidComponent]):
+        self.components = components
 
-    def empty(self) -> tuple:
-        return tuple(m.empty() for m in self.monoids)
+    def empty(self) -> dict[str, Any]:
+        """ε = (ε₁, ε₂, ..., εₙ)"""
+        return {c.name: c.monoid.empty() for c in self.components}
 
-    def combine(self, a: tuple, b: tuple) -> tuple:
-        return tuple(
-            m.combine(ai, bi)
-            for m, ai, bi in zip(self.monoids, a, b)
-        )
+    def combine(self, a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:
+        """combine((a₁,...,aₙ), (b₁,...,bₙ)) = (m₁.combine(a₁,b₁), ..., mₙ.combine(aₙ,bₙ))"""
+        return {
+            c.name: c.monoid.combine(a[c.name], b[c.name])
+            for c in self.components
+        }
+
+    def map_effect(self, effect: Effect) -> dict[str, Any]:
+        """φ_product(e) = (φ₁(e), φ₂(e), ..., φₙ(e))"""
+        return {c.name: c.map_fn(effect) for c in self.components}

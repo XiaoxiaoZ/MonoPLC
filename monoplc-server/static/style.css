@@ -357,7 +357,7 @@ header h1 span {
 }
 
 .chat-window {
-    flex: 1;
+    height: 400px;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     padding: 1rem;
@@ -367,7 +367,6 @@ header h1 span {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    min-height: 500px;
 }
 
 .chat-window::-webkit-scrollbar {
@@ -733,7 +732,11 @@ header h1 span {
 }
 
 /* Responsive */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
     .algebra-grid {
         grid-template-columns: 1fr;
     }
@@ -768,6 +771,7 @@ header h1 span {
 
 .tt-slider {
     -webkit-appearance: none;
+    appearance: none;
     width: 100%;
     height: 6px;
     background: rgba(255, 255, 255, 0.1);
