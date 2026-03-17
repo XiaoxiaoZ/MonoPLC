@@ -117,6 +117,173 @@
             </div>
 
         </main>
+
+        <!-- Monoid Algebra Demos Section -->
+        <section class="algebra-demos">
+            <h2 class="section-title"><i class="fa-solid fa-flask"></i> Monoid Algebra Demos</h2>
+            <p class="section-subtitle">Live demonstrations of algebraic advantages — click to run on real PLC data</p>
+
+            <div class="algebra-grid">
+
+                <!-- Card 1: Incremental Computation -->
+                <div class="glass-card algebra-card">
+                    <div class="algebra-card-header">
+                        <div>
+                            <h3><i class="fa-solid fa-bolt"></i> Incremental Computation</h3>
+                            <p class="algebra-subtitle">Advantage #1 — O(1) update vs O(n) re-fold</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="btn-incremental">
+                            <i class="fa-solid fa-play"></i> Run
+                        </button>
+                    </div>
+
+                    <div class="algebra-formula" id="incremental-formula">
+                        <span class="formula-label">Formula:</span>
+                        <code>state_new = state_old ⊕ map_fn(e_new)</code>
+                    </div>
+
+                    <div class="algebra-result" id="incremental-result" style="display: none;">
+                        <div class="timing-bars">
+                            <div class="timing-row">
+                                <span class="timing-label">Incremental</span>
+                                <div class="timing-bar-container">
+                                    <div class="timing-bar incremental-bar" id="bar-incremental"></div>
+                                </div>
+                                <span class="timing-value" id="time-incremental">—</span>
+                            </div>
+                            <div class="timing-row">
+                                <span class="timing-label">Full re-fold</span>
+                                <div class="timing-bar-container">
+                                    <div class="timing-bar full-bar" id="bar-full"></div>
+                                </div>
+                                <span class="timing-value" id="time-full">—</span>
+                            </div>
+                        </div>
+                        <div class="algebra-badges">
+                            <span class="algebra-badge" id="badge-identical">
+                                <i class="fa-solid fa-check-circle"></i> identical
+                            </span>
+                            <span class="algebra-badge speedup-badge" id="badge-speedup">—</span>
+                            <span class="algebra-badge" id="badge-effects-count">— effects</span>
+                        </div>
+                    </div>
+
+                    <div class="algebra-placeholder" id="incremental-placeholder">
+                        <i class="fa-solid fa-arrow-up" style="opacity: 0.3;"></i>
+                        <span>Click "Run" to compare incremental vs full re-fold</span>
+                    </div>
+                </div>
+
+                <!-- Card 1.5: Parallel Fold -->
+                <div class="glass-card algebra-card">
+                    <div class="algebra-card-header">
+                        <div>
+                            <h3><i class="fa-solid fa-network-wired"></i> Parallel Fold (MapReduce)</h3>
+                            <p class="algebra-subtitle">Advantage — (A ⊕ B) ⊕ (C ⊕ D) == A ⊕ B ⊕ C ⊕ D</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="btn-parallel">
+                            <i class="fa-solid fa-play"></i> Run
+                        </button>
+                    </div>
+
+                    <div class="algebra-formula" id="parallel-formula">
+                        <span class="formula-label">Formula:</span>
+                        <code>Product.fold(A) ⊕ Product.fold(B) ⊕ Product.fold(C) ⊕ Product.fold(D)</code>
+                    </div>
+
+                    <div class="algebra-result" id="parallel-result" style="display: none;">
+                        <div class="timing-bars">
+                            <div class="timing-row">
+                                <span class="timing-label">Parallel</span>
+                                <div class="timing-bar-container">
+                                    <div class="timing-bar parallel-bar" id="bar-parallel"></div>
+                                </div>
+                                <span class="timing-value" id="time-parallel">—</span>
+                            </div>
+                            
+                            <div class="timing-row">
+                                <span class="timing-label">Sequential</span>
+                                <div class="timing-bar-container">
+                                    <div class="timing-bar full-bar" id="bar-seq"></div>
+                                </div>
+                                <span class="timing-value" id="time-seq">—</span>
+                            </div>
+                        </div>
+
+                        <div class="algebra-badges" style="margin-top: 1.5rem;">
+                            <span class="algebra-badge" id="badge-parallel-identical">
+                                <i class="fa-solid fa-question-circle"></i> Waiting...
+                            </span>
+                            <span class="algebra-badge single-pass-badge" id="badge-parallel-speedup">--× speedup</span>
+                            <span class="algebra-badge" id="badge-parallel-effects-count">-- effects</span>
+                        </div>
+                    </div>
+
+                    <div class="algebra-placeholder" id="parallel-placeholder">
+                        <i class="fa-solid fa-arrow-up" style="opacity: 0.3;"></i>
+                        <span>Click "Run" to compare parallel vs sequential full re-fold</span>
+                    </div>
+                </div>
+
+
+
+            <!-- Full Width Card: Time-Travel Playback -->
+            <div class="glass-card algebra-card" style="margin-top: 1.5rem;">
+                <div class="algebra-card-header">
+                    <div>
+                        <h3><i class="fa-solid fa-clock-rotate-left"></i> Historical State Playback (Time-Travel)</h3>
+                        <p class="algebra-subtitle">Advantage #2 — Checkpoint Reuse (state_at = checkpoint ⊕ delta)</p>
+                    </div>
+                    <div id="tt-status-text" style="font-size: 0.85rem; color: var(--text-muted);">
+                        Waiting for data...
+                    </div>
+                </div>
+
+                <div class="time-travel-controls" id="tt-controls" style="opacity: 0.5; pointer-events: none;">
+                    <div class="slider-labels">
+                        <span id="tt-start-label">Start</span>
+                        <span id="tt-current-label" style="color: var(--accent-blue); font-weight: bold;">--:--:--</span>
+                        <span id="tt-end-label">End</span>
+                    </div>
+                    <input type="range" id="tt-slider" min="0" max="1000" value="1000" class="tt-slider">
+                </div>
+
+                <div class="algebra-result" id="tt-result" style="display: none; margin-top: 1rem;">
+                    <div class="tt-info">
+                        <span class="algebra-badge" id="tt-method-badge">
+                            <i class="fa-solid fa-layer-group"></i> <span id="tt-method-text">full fold</span>
+                        </span>
+                        <span class="algebra-badge single-pass-badge" id="tt-effects-badge">0 effects folded</span>
+                    </div>
+                    
+                    <div class="tt-state-container">
+                        <div class="formula-label" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-cubes"></i> Reconstructed Product State</div>
+                        <div class="product-views" id="tt-product-views" style="margin-top: 1rem;">
+                            <div class="product-view-card view-state">
+                                <div class="view-icon"><i class="fa-solid fa-database"></i></div>
+                                <div class="view-label">Latest State</div>
+                                <div class="view-value" id="tt-state-keys">—</div>
+                                <div class="view-sublabel">unique keys</div>
+                            </div>
+                            <div class="product-view-card view-count">
+                                <div class="view-icon"><i class="fa-solid fa-hashtag"></i></div>
+                                <div class="view-label">Total Effects</div>
+                                <div class="view-value" id="tt-effect-count">—</div>
+                                <div class="view-sublabel">folded</div>
+                            </div>
+                            <div class="product-view-card view-alarm">
+                                <div class="view-icon"><i class="fa-solid fa-bell"></i></div>
+                                <div class="view-label">Total Alarms</div>
+                                <div class="view-value" id="tt-alarm-count">—</div>
+                                <div class="view-sublabel">intercepted</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
     </div>
 
     <script src="app.js"></script>

@@ -16,7 +16,7 @@ from config import settings
 from plc_bridge import PLCBridge
 from state_store import StateStore
 
-from routers import effects, status, buttons, llm
+from routers import effects, status, buttons, llm, algebra
 
 # ---------------------------------------------------------------------------
 # Logging Configuration
@@ -105,6 +105,7 @@ app.include_router(effects.router)
 app.include_router(status.router)
 app.include_router(buttons.router)
 app.include_router(llm.router)
+app.include_router(algebra.router)
 
 import os
 # Mount Web GUI Dashboard

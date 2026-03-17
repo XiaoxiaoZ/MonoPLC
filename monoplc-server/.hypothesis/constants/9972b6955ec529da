@@ -1,0 +1,4 @@
+# file: C:\Users\xizh0002\AppData\Roaming\Python\Python312\site-packages\pytest_docker\__init__.py
+# hypothesis_version: 6.151.9
+
+['--container-scope', 'docker', 'docker_cleanup', 'docker_compose_file', 'docker_ip', 'docker_services', 'docker_setup', 'session', 'store']

@@ -225,3 +225,240 @@ btnSendChat.addEventListener('click', async () => {
 chatInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') btnSendChat.click();
 });
+
+
+// ----------------------------------------------------
+// Algebra Demo: Incremental Computation
+// ----------------------------------------------------
+
+document.getElementById('btn-incremental').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-incremental');
+    const icon = btn.querySelector('i');
+    btn.disabled = true;
+    icon.className = 'fa-solid fa-spinner fa-spin';
+
+    try {
+        const res = await fetch(`${API_BASE}/algebra/incremental/compare`);
+        const data = await res.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        // Show results, hide placeholder
+        document.getElementById('incremental-placeholder').style.display = 'none';
+        document.getElementById('incremental-result').style.display = 'block';
+
+        // Update timing values
+        document.getElementById('time-incremental').textContent = `${data.incremental_time_ms.toFixed(4)}ms`;
+        document.getElementById('time-full').textContent = `${data.full_time_ms.toFixed(4)}ms`;
+
+        // Animate timing bars (normalize to max)
+        const maxTime = Math.max(data.incremental_time_ms, data.full_time_ms, 0.001);
+        requestAnimationFrame(() => {
+            document.getElementById('bar-incremental').style.width =
+                `${Math.max((data.incremental_time_ms / maxTime) * 100, 3)}%`;
+            document.getElementById('bar-full').style.width =
+                `${Math.max((data.full_time_ms / maxTime) * 100, 3)}%`;
+        });
+
+        // Update badges
+        const identicalBadge = document.getElementById('badge-identical');
+        if (data.identical) {
+            identicalBadge.innerHTML = '<i class="fa-solid fa-check-circle"></i> identical ✔';
+            identicalBadge.style.color = '#10b981';
+        } else {
+            identicalBadge.innerHTML = '<i class="fa-solid fa-times-circle"></i> MISMATCH ✘';
+            identicalBadge.style.color = '#ef4444';
+        }
+
+        document.getElementById('badge-speedup').textContent = `${data.speedup}× speedup`;
+        document.getElementById('badge-effects-count').textContent = `${data.effects_total} effects`;
+
+    } catch (e) {
+        console.error('Incremental compare error:', e);
+    } finally {
+        icon.className = 'fa-solid fa-play';
+        btn.disabled = false;
+    }
+});
+
+
+// ----------------------------------------------------
+// Algebra Demo: Parallel Fold (MapReduce)
+// ----------------------------------------------------
+
+document.getElementById('btn-parallel').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-parallel');
+    const icon = btn.querySelector('i');
+    btn.disabled = true;
+    icon.className = 'fa-solid fa-spinner fa-spin';
+
+    try {
+        const res = await fetch(`${API_BASE}/algebra/fold/compare?workers=4`);
+        const data = await res.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        // Show results, hide placeholder
+        document.getElementById('parallel-placeholder').style.display = 'none';
+        document.getElementById('parallel-result').style.display = 'block';
+
+        // Update timing values
+        document.getElementById('time-parallel').textContent = `${data.parallel_time_ms.toFixed(4)}ms`;
+        document.getElementById('time-seq').textContent = `${data.sequential_time_ms.toFixed(4)}ms`;
+
+        // Animate timing bars (normalize to max)
+        const maxTime = Math.max(data.parallel_time_ms, data.sequential_time_ms, 0.001);
+        requestAnimationFrame(() => {
+            document.getElementById('bar-parallel').style.width =
+                `${Math.max((data.parallel_time_ms / maxTime) * 100, 3)}%`;
+            document.getElementById('bar-seq').style.width =
+                `${Math.max((data.sequential_time_ms / maxTime) * 100, 3)}%`;
+        });
+
+        // Update badges
+        const identicalBadge = document.getElementById('badge-parallel-identical');
+        if (data.identical) {
+            identicalBadge.innerHTML = '<i class="fa-solid fa-check-circle"></i> identical ✔';
+            identicalBadge.style.color = '#10b981';
+        } else {
+            identicalBadge.innerHTML = '<i class="fa-solid fa-times-circle"></i> MISMATCH ✘';
+            identicalBadge.style.color = '#ef4444';
+        }
+
+        document.getElementById('badge-parallel-speedup').textContent = `${data.speedup_factor}× speedup`;
+        document.getElementById('badge-parallel-effects-count').textContent = `${data.effects_processed} effects`;
+
+    } catch (e) {
+        console.error('Parallel compare error:', e);
+    } finally {
+        icon.className = 'fa-solid fa-play';
+        btn.disabled = false;
+    }
+});
+
+
+
+// ----------------------------------------------------
+// Algebra Demo: Historical State Playback (Time-Travel)
+// ----------------------------------------------------
+
+const ttControls = document.getElementById('tt-controls');
+const ttSlider = document.getElementById('tt-slider');
+const ttStartLabel = document.getElementById('tt-start-label');
+const ttEndLabel = document.getElementById('tt-end-label');
+const ttCurrentLabel = document.getElementById('tt-current-label');
+const ttResult = document.getElementById('tt-result');
+const ttMethodBadge = document.getElementById('tt-method-badge');
+const ttMethodText = document.getElementById('tt-method-text');
+const ttEffectsBadge = document.getElementById('tt-effects-badge');
+const ttStatusText = document.getElementById('tt-status-text');
+
+// Product Monoid UI dimensions for Time-Travel
+const ttStateKeys = document.getElementById('tt-state-keys');
+const ttEffectCount = document.getElementById('tt-effect-count');
+const ttAlarmCount = document.getElementById('tt-alarm-count');
+
+let logBounds = null;
+
+// Periodically check if persistent log has data
+async function checkLogBounds() {
+    try {
+        const res = await fetch(`${API_BASE}/algebra/log/range`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.effect_count > 0) {
+                logBounds = {
+                    start: new Date(data.start_time).getTime(),
+                    end: new Date(data.end_time).getTime(),
+                    count: data.effect_count
+                };
+                
+                // Enable slider
+                ttControls.style.opacity = '1';
+                ttControls.style.pointerEvents = 'auto';
+                ttStatusText.textContent = `${logBounds.count} effects available for time-travel`;
+                
+                // Format labels
+                ttStartLabel.textContent = new Date(logBounds.start).toLocaleTimeString();
+                ttEndLabel.textContent = new Date(logBounds.end).toLocaleTimeString();
+                
+            } else {
+                ttControls.style.opacity = '0.5';
+                ttControls.style.pointerEvents = 'none';
+                ttStatusText.textContent = "Waiting for data... (Start the PLC)";
+            }
+        }
+    } catch (e) {
+        console.error("Failed to check log bounds", e);
+    }
+}
+
+// Initial check and regular polling for bounds
+checkLogBounds();
+setInterval(checkLogBounds, 5000);
+
+// Debounce for the slider to avoid spamming the backend
+let ttDebounceTimer;
+
+// Helper to prevent JS from shifting naive backend times to UTC
+function toLocalISOString(date) {
+    const tzOffsetMs = date.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(date.getTime() - tzOffsetMs)).toISOString().slice(0, -1);
+    return localISOTime;
+}
+
+ttSlider.addEventListener('input', () => {
+    if (!logBounds) return;
+    
+    // Interpolate time based on slider (0 to 1000)
+    const pct = parseInt(ttSlider.value) / 1000;
+    const targetTimestampMs = logBounds.start + pct * (logBounds.end - logBounds.start);
+    const targetDate = new Date(targetTimestampMs);
+    
+    ttCurrentLabel.textContent = targetDate.toLocaleTimeString();
+    
+    clearTimeout(ttDebounceTimer);
+    ttDebounceTimer = setTimeout(() => {
+        fetchHistoricalState(toLocalISOString(targetDate));
+    }, 150); // 150ms debounce
+});
+
+async function fetchHistoricalState(isoTimeStr) {
+    try {
+        // The API expects ISO 8601 string but we must URL-encode it
+        const url = `${API_BASE}/algebra/state/at?t=${encodeURIComponent(isoTimeStr)}`;
+        const res = await fetch(url);
+        
+        if (res.ok) {
+            const data = await res.json();
+            ttResult.style.display = 'block';
+            
+            // Render Product Monoid 3-dimensional state dynamically
+            ttStateKeys.textContent = Object.keys(data.state).length;
+            ttEffectCount.textContent = data.effect_count;
+            ttAlarmCount.textContent = data.alarm_count;
+            
+            // Update performance info
+            ttMethodText.textContent = data.method;
+            if (data.method.includes('checkpoint')) {
+                ttMethodBadge.style.background = 'rgba(168, 85, 247, 0.15)';
+                ttMethodBadge.style.color = '#a855f7';
+                ttMethodBadge.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+            } else {
+                ttMethodBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                ttMethodBadge.style.color = '#10b981';
+                ttMethodBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+            }
+            
+            ttEffectsBadge.textContent = `${data.effects_folded} effects folded`;
+        }
+    } catch (e) {
+        console.error("Time-Travel fetch failed", e);
+    }
+}

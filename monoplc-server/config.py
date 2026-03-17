@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     EFFECT_LOG_SIZE: int = 50  # Size of Effect log retained by StateStore
     POLL_INTERVAL_MS: int = 100  # Polling interval for StateStore checking PLC output queue (ms)
 
+    # --- Design C: StateMonoid Fold / Time-Slice Replay ---
+    PERSISTENT_LOG_SIZE: int = 10000  # Max effects in persistent log for time-travel queries
+    CHECKPOINT_INTERVAL: int = 100    # Create a state checkpoint every N consumed effects
+    MAX_PARALLEL_WORKERS: int = 4     # Worker count for parallel fold (Design C)
+
     model_config = {"env_prefix": "MONOPLC_"}
 
 

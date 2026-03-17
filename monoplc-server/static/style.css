@@ -471,3 +471,376 @@ header h1 span {
     background: #475569;
     cursor: not-allowed;
 }
+
+/* ================================================================
+   Monoid Algebra Demos Section
+   ================================================================ */
+
+.algebra-demos {
+    margin-top: 2rem;
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+}
+
+.section-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+.algebra-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.algebra-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.algebra-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.algebra-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+}
+
+.algebra-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0.2rem 0 0 0;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    flex: initial;
+}
+
+/* Formula display */
+.algebra-formula {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.formula-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.algebra-formula code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: var(--accent-blue);
+    font-size: 0.85rem;
+}
+
+/* Timing bars (Incremental Computation) */
+.timing-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.timing-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.timing-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    min-width: 85px;
+    text-align: right;
+}
+
+.timing-bar-container {
+    flex: 1;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.timing-bar {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+}
+
+.incremental-bar {
+    background: linear-gradient(90deg, #10b981, #34d399);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+.parallel-bar {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
+
+.full-bar {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.timing-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+    min-width: 65px;
+    font-family: monospace;
+}
+
+/* Algebra proof badges */
+.algebra-badges {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.3rem;
+}
+
+.algebra-badge {
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.speedup-badge {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent-blue);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.single-pass-badge {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* Product Monoid view cards */
+.product-views {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.8rem;
+}
+
+.product-view-card {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-view-card:hover {
+    transform: translateY(-2px);
+}
+
+.view-icon {
+    font-size: 1.2rem;
+    margin-bottom: 0.4rem;
+    opacity: 0.8;
+}
+
+.view-state .view-icon { color: var(--accent-blue); }
+.view-count .view-icon { color: var(--accent-green); }
+.view-alarm .view-icon { color: var(--accent-red); }
+
+.view-state { border-color: rgba(59, 130, 246, 0.2); }
+.view-count { border-color: rgba(16, 185, 129, 0.2); }
+.view-alarm { border-color: rgba(239, 68, 68, 0.2); }
+
+.view-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+}
+
+.view-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+}
+
+.view-state .view-value { color: var(--accent-blue); }
+.view-count .view-value { color: var(--accent-green); }
+.view-alarm .view-value { color: var(--accent-red); }
+
+.view-sublabel {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+}
+
+/* Placeholders */
+.algebra-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.algebra-result {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .algebra-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .product-views {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ================================================================
+   Time-Travel Playback UI
+   ================================================================ */
+
+.time-travel-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: opacity 0.3s ease;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.tt-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    outline: none;
+    transition: background 0.2s;
+}
+
+.tt-slider:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.tt-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    transition: transform 0.1s;
+}
+
+.tt-slider::-moz-range-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.tt-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.tt-info {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.tt-state-container {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+}
+
+.tt-json-display {
+    margin: 0;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    max-height: 250px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.tt-json-display::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tt-json-display::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+.tt-json-display::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}

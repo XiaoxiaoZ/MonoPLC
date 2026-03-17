@@ -44,10 +44,10 @@ flowchart TD
     %% 智能决策层
     subgraph Layer_AI ["3. 监督与决策层 (Supervisory Layer)"]
         Ollama["Ollama 推理引擎 (config.py OLLAMA_URL)"]
-        WebUI["人类操作员前端 (static/app.js)"]
+        WebUI["人类操作员前端 (static/ index.html)"]
         
         Router_LLM <==>|Prompt入 / Effect Intent出| Ollama
-        Router_UI <==>|HTTP API (Polling)| WebUI
+        Router_UI <==>|HTTP API / Websocket| WebUI
     end
 
     classDef plcCore fill:#e1f5fe,stroke:#03a9f4,stroke-width:2px;
