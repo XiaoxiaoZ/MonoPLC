@@ -1,9 +1,13 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <POU Name="Control_LOOP" Id="{5f40ff20-e9a3-4c62-9625-a0cac8de4d78}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM Control_LOOP
 VAR
-	Inst_Logic     : FB_SimpleLogic;       // 纯净的核心业务逻辑
+	Inst_Logic     : FB_SimpleLogic;       // 纯净的温度业务逻辑
+	Inst_HumLogic  : FB_HumidityLogic;     // 纯净的湿度业务逻辑 (新增)
+	
+	Global_Climate : DUT_Climate_Monoid;   // 全局 Product Monoid (气候大一统状态)
+	Local_Climate  : DUT_Climate_Monoid;   // 局部 Product Monoid
 	
 	// --- 事件总线 (The Event Bus) ---
 	// 本地循环队列，大小 200，足以容纳单周期内爆发的所有事件
@@ -87,13 +91,25 @@ WHILE Q_Tail <> Q_Head DO
 		Inst_Logic(
 			Current_Temp := GVL.Net_Temperature,
 			Current_Time_Str := Current_Time_Str_Val,
-			Input_Event := Current_Event // <--- 每次只喂一粒单颗的红药丸
+			Input_Event := Current_Event // <--- 每次喂给温度逻辑
+		);
+		
+		Inst_HumLogic(
+			Input_Event := Current_Event // <--- 同样喂给湿度逻辑
 		);
 		
 		// 收获果实
 		Total_Monoid := Inst_Logic.Effects_Out;
 		
+		// 组装局部的 Product Monoid
+		Local_Climate.Temp := Inst_Logic.Effects_Out;
+		Local_Climate.Hum  := Inst_HumLogic.Effects_Out;
+		
+		// Product Monoid 的全局代数生长：完美、无痛地融合两套不同的逻辑！
+		Global_Climate := FC_CombineClimate(Global_Climate, Local_Climate);
+		
 		// 革命性的一步：把运算导致的新动作，重新塞回事件总线尾部排队！(Event Recursion)
+		// 注意：此处依旧只提取 Temp (Free Monoid) 产生的副作用列表放入队列
 		FOR i := 1 TO Total_Monoid.Count DO
 			Next_Head := (Q_Head + 1) MOD 200;
 			IF Next_Head <> Q_Tail THEN

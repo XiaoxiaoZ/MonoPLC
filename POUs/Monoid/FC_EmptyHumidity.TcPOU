@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_EmptyHumidity" Id="{3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_EmptyHumidity : DUT_Humidity_Monoid
+VAR_INPUT
+END_VAR
+VAR
+	Result : DUT_Humidity_Monoid;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Result.SprayAmount := 0.0;
+FC_EmptyHumidity := Result;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

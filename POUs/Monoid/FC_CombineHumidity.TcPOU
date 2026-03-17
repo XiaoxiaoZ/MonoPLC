@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_CombineHumidity" Id="{4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f90}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_CombineHumidity : DUT_Humidity_Monoid
+VAR_INPUT
+	A : DUT_Humidity_Monoid;
+	B : DUT_Humidity_Monoid;
+END_VAR
+VAR
+	Result : DUT_Humidity_Monoid;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 加法幺半群的结合律：简单的数值相加
+Result.SprayAmount := A.SprayAmount + B.SprayAmount;
+FC_CombineHumidity := Result;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

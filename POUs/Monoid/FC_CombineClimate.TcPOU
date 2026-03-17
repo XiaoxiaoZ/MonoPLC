@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_CombineClimate" Id="{5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f90a1}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_CombineClimate : DUT_Climate_Monoid
+VAR_INPUT
+	A : DUT_Climate_Monoid;
+	B : DUT_Climate_Monoid;
+END_VAR
+VAR
+	Result : DUT_Climate_Monoid;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Product Monoid 的核心理念：对其内部的所有子 Monoids 独立且同步地进行结合运算
+Result.Temp := FC_CombineEffects(A.Temp, B.Temp);
+Result.Hum := FC_CombineHumidity(A.Hum, B.Hum);
+FC_CombineClimate := Result;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
