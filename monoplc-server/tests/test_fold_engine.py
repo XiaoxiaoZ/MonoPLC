@@ -13,10 +13,10 @@ import pytest
 from hypothesis import given, settings as hsettings
 
 from models import Effect, EffectType
-from monoid import MWStateMonoid, SumMonoid, ProductMonoid
+from monoid import MWStateMonoid, SumMonoid, DictProductMonoid
 from fold_engine import FoldEngine, EffectLogEntry, Checkpoint, FoldComparison
 from homomorphism import phi
-from state_store import _map_to_product
+from state_store import PRODUCT_COMPONENTS
 
 from strategies import effect_list_strategy
 
@@ -249,10 +249,8 @@ class TestFoldProduct:
     computes all three simultaneously in a single traversal.
     """
 
-    engine = FoldEngine(
-        ProductMonoid(MWStateMonoid(), SumMonoid(), SumMonoid()),
-        _map_to_product
-    )
+    _pm = DictProductMonoid(PRODUCT_COMPONENTS)
+    engine = FoldEngine(_pm, _pm.map_effect)
 
     def test_product_fold_basic(self, sample_effects):
         """Product fold should produce correct state, count, and alarms."""
@@ -261,24 +259,24 @@ class TestFoldProduct:
         # State should match regular fold (minus filtered types)
         regular_engine = FoldEngine(MWStateMonoid(), lambda e: phi([e]))
         regular_state = regular_engine.fold(sample_effects)
-        assert result[0] == regular_state
+        assert result["state"] == regular_state
 
         # Count should be > 0 (sample_effects has meaningful effects)
-        assert result[1] > 0
+        assert result["effect_count"] > 0
 
         # Alarm count should match number of EFF_ALARM in sample
         expected_alarms = sum(
             1 for e in sample_effects
             if e.e_type == EffectType.EFF_ALARM
         )
-        assert result[2] == expected_alarms
+        assert result["alarm_count"] == expected_alarms
 
     def test_product_fold_empty(self):
         """Product fold on empty list returns zeros."""
         result = self.engine.fold([])
-        assert result[0] == {}
-        assert result[1] == 0
-        assert result[2] == 0
+        assert result["state"] == {}
+        assert result["effect_count"] == 0
+        assert result["alarm_count"] == 0
 
     def test_product_fold_only_noise(self):
         """Product fold filters out SYSTEM_TICK and NONE."""
@@ -287,6 +285,6 @@ class TestFoldProduct:
             Effect(e_type=EffectType.EFF_NONE, target="", payload="", value=0.0),
         ]
         result = self.engine.fold(effects)
-        assert result[0] == {}
-        assert result[1] == 0
-        assert result[2] == 0
+        assert result["state"] == {}
+        assert result["effect_count"] == 0
+        assert result["alarm_count"] == 0

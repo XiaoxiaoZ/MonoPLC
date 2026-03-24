@@ -12,8 +12,10 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Product Monoid 的核心理念：对其内部的所有子 Monoids 独立且同步地进行结合运算
-Result.Temp := FC_CombineEffects(A.Temp, B.Temp);
-Result.Hum := FC_CombineHumidity(A.Hum, B.Hum);
+// 每个分量使用自己的 Combine 函数，互不干涉
+Result.Temp     := FC_CombineEffects(A.Temp, B.Temp);
+Result.Hum      := FC_CombineHumidity(A.Hum, B.Hum);
+Result.Pressure := FC_CombinePressure(A.Pressure, B.Pressure);  // 纵向扩展新增
 FC_CombineClimate := Result;]]></ST>
     </Implementation>
   </POU>

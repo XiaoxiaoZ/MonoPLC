@@ -12,10 +12,10 @@ automatically bridges the two without either side knowing about the other.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Protocol, TypeVar, runtime_checkable
 
-from models import Effect
+from models import Effect, EffectType
 
 T = TypeVar("T")
 
@@ -59,6 +59,114 @@ class PLCEffectMonoid:
 
     def combine(self, a: list[Effect], b: list[Effect]) -> list[Effect]:
         return a + b
+
+
+# ---------------------------------------------------------------------------
+# Design A': Bounded PLC Effect Monoid — mirrors PLC take(N) truncation
+# ---------------------------------------------------------------------------
+
+class BoundedPLCEffectMonoid:
+    """
+    M_PLC_bounded = (list[Effect], take(N, concat), [])
+
+    Mirrors PLC-side FC_CombineEffects with ARRAY[1..N] capacity.
+    Associativity holds: take(N, take(N, xs) ++ ys) = take(N, xs ++ ys).
+    Truncation is silent — effects beyond capacity are lost.
+    """
+
+    def __init__(self, capacity: int = 20):
+        self.capacity = capacity
+
+    def empty(self) -> list[Effect]:
+        return []
+
+    def combine(self, a: list[Effect], b: list[Effect]) -> list[Effect]:
+        return (a + b)[: self.capacity]
+
+
+# ---------------------------------------------------------------------------
+# Design B: Key-Aware Last-Writer-Wins Merge
+# ---------------------------------------------------------------------------
+
+class LWWEffectMonoid:
+    """
+    M_LWW = (list[Effect], lww_merge, [])
+
+    Deduplicates by composite key (e_type, target), keeping the latest
+    (rightmost) value for each key. Different keys are all retained.
+
+    Associativity: right-biased merge over a key space is associative.
+    Identity: empty list (no keys -> no overwrites).
+
+    Note: identity law holds up to key-equivalence, not list equality.
+    Two lists are considered equal if they represent the same key->value mapping.
+    """
+
+    def empty(self) -> list[Effect]:
+        return []
+
+    def combine(self, a: list[Effect], b: list[Effect]) -> list[Effect]:
+        merged: dict[tuple[int, str], Effect] = {}
+        for e in a:
+            merged[(int(e.e_type), e.target)] = e
+        for e in b:
+            merged[(int(e.e_type), e.target)] = e
+        return list(merged.values())
+
+
+# ---------------------------------------------------------------------------
+# Design D: Bounded Concat + Overflow Detection (side-channel)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class CombineResult:
+    """Result of a combine operation with overflow metadata."""
+    effects: list[Effect]
+    overflow_occurred: bool = False
+    overflow_count: int = 0
+
+
+class DetectingPLCEffectMonoid:
+    """
+    M_PLC_detecting = (list[Effect], take(N, concat), [])
+
+    Algebraically identical to BoundedPLCEffectMonoid (same combine, same
+    identity). Overflow detection is a side-channel diagnostic that does NOT
+    participate in the algebraic structure.
+
+    IMPORTANT: The combine operation is take(N, A ++ B) — NOT "replace with
+    epsilon on overflow". Replacing with epsilon would break associativity.
+    """
+
+    def __init__(self, capacity: int = 20):
+        self.capacity = capacity
+        self.total_overflow_count: int = 0
+        self.overflow_detected: bool = False
+
+    def empty(self) -> list[Effect]:
+        return []
+
+    def combine(self, a: list[Effect], b: list[Effect]) -> list[Effect]:
+        """Algebraic combine — same as BoundedPLCEffectMonoid."""
+        return (a + b)[: self.capacity]
+
+    def combine_with_meta(self, a: list[Effect], b: list[Effect]) -> CombineResult:
+        """Combine with overflow detection side-channel."""
+        full = a + b
+        truncated = len(full) > self.capacity
+        result = full[: self.capacity]
+        if truncated:
+            self.overflow_detected = True
+            self.total_overflow_count += 1
+        return CombineResult(
+            effects=result,
+            overflow_occurred=truncated,
+            overflow_count=1 if truncated else 0,
+        )
+
+    def reset_diagnostics(self) -> None:
+        self.total_overflow_count = 0
+        self.overflow_detected = False
 
 
 # ---------------------------------------------------------------------------

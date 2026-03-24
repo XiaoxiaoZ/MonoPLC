@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="DUT_Pressure_Monoid" Id="{a1b2c3d4-e5f6-7890-abcd-ef1234567890}">
+    <Declaration><![CDATA[// Max 幺半群：记录观测到的最高压力值 (bar)
+// Monoid 语义: (REAL, max, 0.0)
+// Identity = 0.0, Combine = MAX(A, B)
+TYPE DUT_Pressure_Monoid :
+STRUCT
+	PeakPressure : REAL := 0.0; // 记录最高压力 (bar)
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

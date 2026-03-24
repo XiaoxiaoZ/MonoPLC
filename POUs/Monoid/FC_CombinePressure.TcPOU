@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_CombinePressure" Id="{b2c3d4e5-f6a7-8901-bcde-f12345678901}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_CombinePressure : DUT_Pressure_Monoid
+VAR_INPUT
+	A : DUT_Pressure_Monoid;
+	B : DUT_Pressure_Monoid;
+END_VAR
+VAR
+	Result : DUT_Pressure_Monoid;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Max 幺半群的结合律：取两者中的较大值
+IF A.PeakPressure >= B.PeakPressure THEN
+	Result.PeakPressure := A.PeakPressure;
+ELSE
+	Result.PeakPressure := B.PeakPressure;
+END_IF;
+FC_CombinePressure := Result;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

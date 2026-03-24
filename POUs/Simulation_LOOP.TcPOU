@@ -21,8 +21,9 @@ GVL.System_Time_UINT := F_GetSystemTime();
 // 阶段 A：物理世界演进 (Read from Simulator)
 // ==========================================
 // 传入上一周期的阀门指令，计算出当前的最新温度
-Inst_Simulator(Valve_Open := GVL.Net_ValveCmd);
+Inst_Simulator(Valve_Open := GVL.Net_ValveCmd, Vent_Open := GVL.Net_VentValveCmd);
 GVL.Net_Temperature := Inst_Simulator.Sim_Temp;
+GVL.Net_Pressure    := Inst_Simulator.Sim_Pressure;  // 纵向扩展新增
 ]]></ST>
     </Implementation>
   </POU>

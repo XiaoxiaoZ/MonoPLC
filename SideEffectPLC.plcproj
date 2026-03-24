@@ -34,6 +34,9 @@
     <Compile Include="DUTs\DUT_Humidity_Monoid.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\DUT_Pressure_Monoid.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\ENUM_Effect_Type.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -80,10 +83,19 @@
     <Compile Include="POUs\Monoid\FC_CombineHumidity.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\Monoid\FC_CombinePressure.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\Monoid\FC_EmptyHumidity.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\Monoid\FC_EmptyPressure.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\PLCLogic\FB_HumidityLogic.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\PLCLogic\FB_PressureLogic.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\SideEffect_LOOP.TcPOU">

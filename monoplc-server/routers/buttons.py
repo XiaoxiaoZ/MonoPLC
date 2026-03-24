@@ -57,3 +57,37 @@ async def button_spray():
     if not success:
         raise HTTPException(status_code=503, detail="PLC input queue is full or ADS not connected")
     return {"status": "ok", "button": "Spray Water", "effect": effect.model_dump()}
+
+
+@router.post("/vent", summary="Toggle Vent Valve (Pressure Release)")
+async def button_vent():
+    """Construct EFF_VALVE_CTRL for VentValve — opens the pressure relief valve."""
+    from main import app_state
+
+    effect = Effect(
+        e_type=EffectType.EFF_VALVE_CTRL,
+        target="VentValve",
+        payload="GUI:Vent",
+        value=1.0,
+    )
+    success = app_state.plc_bridge.push_input_effect(effect)
+    if not success:
+        raise HTTPException(status_code=503, detail="PLC input queue is full or ADS not connected")
+    return {"status": "ok", "button": "Vent Valve", "effect": effect.model_dump()}
+
+
+@router.post("/pressure-setpoint", summary="Change Pressure High Limit")
+async def button_pressure_setpoint(value: float = 7.0):
+    """Send EFF_SETPOINT_CHANGE for PressureHighLimit."""
+    from main import app_state
+
+    effect = Effect(
+        e_type=EffectType.EFF_SETPOINT_CHANGE,
+        target="PressureHighLimit",
+        payload=f"GUI:SetPressure={value}",
+        value=value,
+    )
+    success = app_state.plc_bridge.push_input_effect(effect)
+    if not success:
+        raise HTTPException(status_code=503, detail="PLC input queue is full or ADS not connected")
+    return {"status": "ok", "button": "Pressure Setpoint", "effect": effect.model_dump()}

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PressureLogic" Id="{d4e5f6a7-b8c9-0123-defa-234567890123}" SpecialFunc="None">
+    <Declaration><![CDATA[// 压力控制纯函数 — 完全独立于温度控制和湿度控制
+// 实现迟滞控制：压力过高时打开泄压阀，降低到安全范围后关闭
+// 遵循与 FB_SimpleLogic 完全一致的设计模式 (纯函数 + Effect Monoid 输出)
+FUNCTION_BLOCK FB_PressureLogic
+VAR_INPUT
+	Current_Pressure : REAL;           // 当前压力传感器读数 (bar)
+	Current_Time_Str : STRING[32];     // 冻结时间戳
+	Input_Event      : DUT_Effect;     // 事件总线喂入的单一事件
+END_VAR
+VAR_OUTPUT
+	Effects_Out  : DUT_Effect_Monoid;      // 产生的副作用
+	Pressure_Out : DUT_Pressure_Monoid;    // 压力 Monoid 输出 (PeakPressure)
+END_VAR
+VAR
+	Is_Venting   : BOOL := FALSE;     // 泄压阀状态
+	System_En    : BOOL := TRUE;      // 系统使能位
+
+	// 可变参数 (Setpoints)
+	PressureHighLimit : REAL := 6.0;  // 迟滞上限 (bar)
+	PressureLowLimit  : REAL := 3.0;  // 迟滞下限 (bar)
+
+	// Heartbeat
+	Tick_Counter : INT := 0;
+	HEARTBEAT_INTERVAL : INT := 100;  // ~1 second
+
+	// 临时变量
+	Eff_Valve   : DUT_Effect_Monoid;
+	Eff_Network : DUT_Effect_Monoid;
+	Final_Payload : STRING[64];
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 1. 初始化空 Monoid (单位元)
+Effects_Out := FC_EmptyEffect();
+Pressure_Out := FC_EmptyPressure();
+
+// 2. 根据事件进行模式匹配 (Pattern Matching) — 与 FB_SimpleLogic 完全对称
+IF Input_Event.EType = EFF_IOT_CMD_STOP THEN
+	Is_Venting := FALSE;
+	System_En := FALSE;
+
+	Final_Payload := CONCAT('[', Current_Time_Str);
+	Final_Payload := CONCAT(Final_Payload, ' | P=');
+	Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Pressure));
+	Final_Payload := CONCAT(Final_Payload, '] Pressure: Forced Stop, Vent Closed');
+
+	Eff_Valve   := FC_ValveEffect('VentValve', FALSE);
+	Eff_Network := FC_IoTEffect('system/pressure', Final_Payload);
+	Effects_Out := FC_CombineEffects(Eff_Valve, Eff_Network);
+
+ELSIF Input_Event.EType = EFF_IOT_CMD_START AND NOT System_En THEN
+	System_En := TRUE;
+
+	Final_Payload := CONCAT('[', Current_Time_Str);
+	Final_Payload := CONCAT(Final_Payload, ' | P=');
+	Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Pressure));
+	Final_Payload := CONCAT(Final_Payload, '] Pressure: System Started');
+
+	Eff_Network := FC_IoTEffect('system/pressure', Final_Payload);
+	Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
+
+ELSIF Input_Event.EType = EFF_IOT_CMD_RESET THEN
+
+	Final_Payload := CONCAT('[', Current_Time_Str);
+	Final_Payload := CONCAT(Final_Payload, ' | P=');
+	Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Pressure));
+	Final_Payload := CONCAT(Final_Payload, '] Pressure: Reset Acknowledged');
+
+	Eff_Network := FC_IoTEffect('system/pressure', Final_Payload);
+	Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
+
+ELSIF Input_Event.EType = EFF_SETPOINT_CHANGE THEN
+	IF Input_Event.Target = 'PressureHighLimit' THEN
+		PressureHighLimit := MIN(MAX(Input_Event.Value, 2.0), 10.0);
+		Final_Payload := CONCAT('PressureHighLimit changed to ', REAL_TO_STRING(PressureHighLimit));
+	ELSIF Input_Event.Target = 'PressureLowLimit' THEN
+		PressureLowLimit := MIN(MAX(Input_Event.Value, 1.0), 8.0);
+		Final_Payload := CONCAT('PressureLowLimit changed to ', REAL_TO_STRING(PressureLowLimit));
+	END_IF;
+	// Note: setpoints not targeting Pressure* are silently ignored (decoupling)
+
+ELSIF Input_Event.EType = EFF_SYSTEM_TICK THEN
+	IF System_En THEN
+		// 迟滞控制 — 与温度控制完全对称但独立
+		IF Current_Pressure < PressureLowLimit AND Is_Venting THEN
+			Is_Venting := FALSE;
+			Final_Payload := CONCAT('[', Current_Time_Str);
+			Final_Payload := CONCAT(Final_Payload, ' | P=');
+			Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Pressure));
+			Final_Payload := CONCAT(Final_Payload, '] Vent Closed');
+
+			Eff_Valve   := FC_ValveEffect('VentValve', FALSE);
+			Eff_Network := FC_IoTEffect('system/pressure', Final_Payload);
+			Effects_Out := FC_CombineEffects(Eff_Valve, Eff_Network);
+
+		ELSIF Current_Pressure > PressureHighLimit AND NOT Is_Venting THEN
+			Is_Venting := TRUE;
+			Final_Payload := CONCAT('[', Current_Time_Str);
+			Final_Payload := CONCAT(Final_Payload, ' | P=');
+			Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Pressure));
+			Final_Payload := CONCAT(Final_Payload, '] Vent Opened');
+
+			Eff_Valve   := FC_ValveEffect('VentValve', TRUE);
+			Eff_Network := FC_IoTEffect('system/pressure', Final_Payload);
+			Effects_Out := FC_CombineEffects(Eff_Valve, Eff_Network);
+
+		ELSIF Current_Pressure > PressureHighLimit AND Is_Venting THEN
+			Final_Payload := CONCAT('[', Current_Time_Str);
+			Final_Payload := CONCAT(Final_Payload, ' | P=');
+			Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Pressure));
+			Final_Payload := CONCAT(Final_Payload, '] PRESSURE STILL HIGH!');
+
+			Effects_Out := FC_AlarmEffect('OverPressure', Final_Payload, 1.0);
+			Eff_Network := FC_IoTEffect('system/pressure', Final_Payload);
+			Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
+		END_IF;
+
+		// Heartbeat
+		Tick_Counter := Tick_Counter + 1;
+		IF Tick_Counter >= HEARTBEAT_INTERVAL THEN
+			Tick_Counter := 0;
+			Final_Payload := CONCAT('[', Current_Time_Str);
+			Final_Payload := CONCAT(Final_Payload, ' | P=');
+			Final_Payload := CONCAT(Final_Payload, REAL_TO_STRING(Current_Pressure));
+			Final_Payload := CONCAT(Final_Payload, '] Heartbeat: Pressure Stable');
+
+			Eff_Network := FC_IoTEffect('system/pressure', Final_Payload);
+			Effects_Out := FC_CombineEffects(Effects_Out, Eff_Network);
+		END_IF;
+	END_IF;
+END_IF;
+
+// 3. 记录本次观测到的压力峰值 (Max Monoid)
+Pressure_Out.PeakPressure := Current_Pressure;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

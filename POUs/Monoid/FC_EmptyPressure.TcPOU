@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FC_EmptyPressure" Id="{c3d4e5f6-a7b8-9012-cdef-123456789012}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_EmptyPressure : DUT_Pressure_Monoid
+VAR
+	Result : DUT_Pressure_Monoid;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Max 幺半群的单位元 (Identity): PeakPressure = 0.0
+// 对任意 x: MAX(x, 0) = x (当 x >= 0)
+Result.PeakPressure := 0.0;
+FC_EmptyPressure := Result;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

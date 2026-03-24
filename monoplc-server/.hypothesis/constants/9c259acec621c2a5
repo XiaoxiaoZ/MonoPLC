@@ -1,0 +1,4 @@
+# file: D:\HV-filesync\xizh0002\Documents\TcXaeShell\MonoPLC\MonoPLC\SideEffectPLC\monoplc-server\state_store.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1000.0, 'Humidifier', 'alarm_count', 'e_type', 'effect_count', 'effect_index', 'payload', 'state', 'state_keys', 'target', 'timestamp', 'total_spray_ml', 'value']

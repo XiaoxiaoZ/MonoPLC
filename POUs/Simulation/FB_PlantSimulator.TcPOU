@@ -3,14 +3,19 @@
   <POU Name="FB_PlantSimulator" Id="{6f12d73c-8e8b-4579-8c81-506458d243cb}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PlantSimulator
 VAR_INPUT
-    Valve_Open : BOOL;       // 接收来自路由器的控制信号
+    Valve_Open : BOOL;           // 冷却阀控制信号
+	Vent_Open  : BOOL;           // 泄压阀控制信号 (纵向扩展新增)
 END_VAR
 VAR_OUTPUT
-    Sim_Temp   : REAL := 75.0; // 初始环境温度
+    Sim_Temp     : REAL := 75.0; // 初始环境温度
+	Sim_Pressure : REAL := 5.0;  // 初始系统压力 (bar) (纵向扩展新增)
 END_VAR
 VAR
     Heating_Rate : REAL := 0.01;  // 每一周期的自然升温速率
     Cooling_Rate : REAL := 0.02;  // 阀门打开时的降温速率
+	// 压力模拟参数 (纵向扩展新增)
+	Pressurize_Rate : REAL := 0.005;  // 每周期自然增压速率 (压缩机)
+	Vent_Rate       : REAL := 0.01;   // 泄压阀打开时的降压速率
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -22,6 +27,20 @@ ELSE
 	// 冷水阀关闭，温度缓慢向 90 度靠拢
 	IF Sim_Temp < 90.0 THEN
 		Sim_Temp := Sim_Temp + Heating_Rate;
+	END_IF;
+END_IF;
+
+// 压力模拟 (纵向扩展新增 — 与温度模拟完全独立)
+IF Vent_Open THEN
+	// 泄压阀打开，压力快速下降
+	Sim_Pressure := Sim_Pressure - Vent_Rate;
+	IF Sim_Pressure < 0.0 THEN
+		Sim_Pressure := 0.0;
+	END_IF;
+ELSE
+	// 泄压阀关闭，压缩机缓慢增压 (向 8 bar 靠拢)
+	IF Sim_Pressure < 8.0 THEN
+		Sim_Pressure := Sim_Pressure + Pressurize_Rate;
 	END_IF;
 END_IF;]]></ST>
     </Implementation>

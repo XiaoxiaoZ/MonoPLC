@@ -239,14 +239,18 @@ class TestSumMonoid:
 # ProductMonoid — Monoid Law Tests
 # ---------------------------------------------------------------------------
 
-class TestProductMonoid:
+class TestDictProductMonoid:
     """
-    ProductMonoid(MWStateMonoid, SumMonoid, SumMonoid) must satisfy Monoid laws.
+    DictProductMonoid(state, effect_count, alarm_count) must satisfy Monoid laws.
     If each sub-monoid is a Monoid, the product is automatically a Monoid.
     """
 
-    from monoid import SumMonoid as _Sum, ProductMonoid as _Prod
-    m = _Prod(MWStateMonoid(), _Sum(), _Sum())
+    from monoid import SumMonoid as _Sum, DictProductMonoid as _DProd, MonoidComponent as _MC
+    m = _DProd([
+        _MC(name="state", monoid=MWStateMonoid(), map_fn=lambda e: {}),
+        _MC(name="effect_count", monoid=_Sum(), map_fn=lambda e: 1),
+        _MC(name="alarm_count", monoid=_Sum(), map_fn=lambda e: 0),
+    ])
 
     @given(
         a_effects=effect_list_strategy(),
@@ -263,17 +267,75 @@ class TestProductMonoid:
     def test_associativity(self, a_effects, b_effects, c_effects,
                            a_count, b_count, c_count, a_alarm, b_alarm, c_alarm):
         """(a ⊕ b) ⊕ c == a ⊕ (b ⊕ c) — component-wise."""
-        a = (phi(a_effects), a_count, a_alarm)
-        b = (phi(b_effects), b_count, b_alarm)
-        c = (phi(c_effects), c_count, c_alarm)
+        a = {"state": phi(a_effects), "effect_count": a_count, "alarm_count": a_alarm}
+        b = {"state": phi(b_effects), "effect_count": b_count, "alarm_count": b_alarm}
+        c = {"state": phi(c_effects), "effect_count": c_count, "alarm_count": c_alarm}
         lhs = self.m.combine(self.m.combine(a, b), c)
         rhs = self.m.combine(a, self.m.combine(b, c))
         assert lhs == rhs
 
-    def test_identity(self):
-        """ε_product == (ε_state, ε_sum, ε_sum)"""
+    def test_left_identity(self):
+        """ε ⊕ a == a"""
         empty = self.m.empty()
-        assert empty == ({}, 0, 0)
-        a = ({"key": {"value": 1.0}}, 5, 2)
+        assert empty == {"state": {}, "effect_count": 0, "alarm_count": 0}
+        a = {"state": {"key": {"value": 1.0}}, "effect_count": 5, "alarm_count": 2}
         assert self.m.combine(self.m.empty(), a) == a
+
+    def test_right_identity(self):
+        """a ⊕ ε == a"""
+        a = {"state": {"key": {"value": 1.0}}, "effect_count": 5, "alarm_count": 2}
         assert self.m.combine(a, self.m.empty()) == a
+
+    def test_new_component_registration(self):
+        """Adding a new MonoidComponent should auto-include in fold with zero downstream changes.
+
+        This tests the extensibility guarantee: registering a new dimension
+        (e.g., peak_temp via MaxMonoid) requires ZERO modifications to
+        FoldEngine, StateStore, or any API endpoint.
+        """
+        from monoid import MaxMonoid, DictProductMonoid, MonoidComponent, SumMonoid
+
+        # Original 3-component product
+        original = DictProductMonoid([
+            MonoidComponent(name="state", monoid=MWStateMonoid(), map_fn=lambda e: {}),
+            MonoidComponent(name="effect_count", monoid=SumMonoid(), map_fn=lambda e: 1),
+            MonoidComponent(name="alarm_count", monoid=SumMonoid(), map_fn=lambda e: 0),
+        ])
+
+        # Extended 4-component product — only this definition changes
+        extended = DictProductMonoid([
+            MonoidComponent(name="state", monoid=MWStateMonoid(), map_fn=lambda e: {}),
+            MonoidComponent(name="effect_count", monoid=SumMonoid(), map_fn=lambda e: 1),
+            MonoidComponent(name="alarm_count", monoid=SumMonoid(), map_fn=lambda e: 0),
+            MonoidComponent(name="peak_temp", monoid=MaxMonoid(), map_fn=lambda e: float(e.value)),
+        ])
+
+        # Verify the new component appears in empty and combine
+        empty = extended.empty()
+        assert "peak_temp" in empty
+        assert empty["peak_temp"] == float('-inf')  # MaxMonoid identity
+
+        # Verify combine works with new component
+        a = {"state": {}, "effect_count": 3, "alarm_count": 0, "peak_temp": 75.0}
+        b = {"state": {}, "effect_count": 2, "alarm_count": 1, "peak_temp": 82.5}
+        result = extended.combine(a, b)
+        assert result["peak_temp"] == 82.5  # max(75.0, 82.5)
+        assert result["effect_count"] == 5  # 3 + 2
+
+        # Verify map_effect includes new component
+        e = Effect(e_type=EffectType.EFF_VALVE_CTRL, target="V1", payload="", value=90.0)
+        mapped = extended.map_effect(e)
+        assert mapped["peak_temp"] == 90.0
+
+        # Verify fold still works (FoldEngine is generic)
+        from fold_engine import FoldEngine
+        engine = FoldEngine(extended, extended.map_effect)
+        effects = [
+            Effect(e_type=EffectType.EFF_VALVE_CTRL, target="V1", payload="", value=70.0),
+            Effect(e_type=EffectType.EFF_IOT_PUB, target="t", payload="", value=85.0),
+            Effect(e_type=EffectType.EFF_ALARM, target="A1", payload="!", value=95.0),
+        ]
+        folded = engine.fold(effects)
+        assert folded["peak_temp"] == 95.0
+        assert folded["effect_count"] == 3
+        assert folded["alarm_count"] == 0  # map_fn always returns 0 in this config

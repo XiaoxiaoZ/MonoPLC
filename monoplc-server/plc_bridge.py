@@ -231,3 +231,18 @@ class PLCBridge:
         except Exception as e:
             logger.warning("read_plc_humidity failed: %s. Is the new PLC code compiled?", e)
             return 0.0
+
+    def read_plc_peak_pressure(self) -> float:
+        """
+        Reads the PLC-side Product Monoid accumulation for Pressure (Max Monoid).
+        Experiment #8: vertical extensibility — proves PLC-side Max Monoid works.
+        """
+        if not self.is_connected:
+            return 0.0
+
+        try:
+            val = self._plc.read_by_name("Control_LOOP.Global_Climate.Pressure.PeakPressure", pyads.PLCTYPE_REAL)
+            return float(val)
+        except Exception as e:
+            logger.warning("read_plc_peak_pressure failed: %s. Is the new PLC code compiled?", e)
+            return 0.0

@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <DUT Name="DUT_Climate_Monoid" Id="{2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e}">
-    <Declaration><![CDATA[// 这是一个典型的 Product Monoid, 将自由幺半群 (Effect) 和 加法幺半群 (Humidity) 结合在一起
+    <Declaration><![CDATA[// 这是一个典型的 Product Monoid, 将多个子幺半群独立地结合在一起
+// 纵向扩展：每增加一个控制域，只需添加一个新字段 + 对应的 Combine 函数
 TYPE DUT_Climate_Monoid :
 STRUCT
-	Temp : DUT_Effect_Monoid;
-	Hum  : DUT_Humidity_Monoid;
+	Temp     : DUT_Effect_Monoid;       // 温度控制 (Free Monoid)
+	Hum      : DUT_Humidity_Monoid;     // 湿度控制 (Sum Monoid)
+	Pressure : DUT_Pressure_Monoid;     // 压力监控 (Max Monoid) — 纵向扩展新增
 END_STRUCT
 END_TYPE
 ]]></Declaration>

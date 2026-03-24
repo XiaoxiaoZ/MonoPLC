@@ -50,11 +50,20 @@ def map_alarm(effect: Effect) -> int:
 def map_spray(effect: Effect) -> float:
     return float(effect.value) if effect.e_type == EffectType.EFF_VALVE_CTRL and effect.target == "Humidifier" else 0.0
 
+def map_peak_pressure(effect: Effect) -> float:
+    """Map pressure-related effects to MaxMonoid. Identity = -inf."""
+    if effect.e_type == EffectType.EFF_IOT_PUB and "pressure" in effect.target.lower():
+        return effect.value
+    return float('-inf')  # MaxMonoid identity — ignored by max()
+
+from monoid import MaxMonoid
+
 PRODUCT_COMPONENTS = [
     MonoidComponent(name="state", monoid=MWStateMonoid(), map_fn=map_state),
     MonoidComponent(name="effect_count", monoid=SumMonoid(), map_fn=map_count),
     MonoidComponent(name="alarm_count", monoid=SumMonoid(), map_fn=map_alarm),
     MonoidComponent(name="total_spray_ml", monoid=SumMonoid(), map_fn=map_spray),
+    MonoidComponent(name="peak_pressure", monoid=MaxMonoid(), map_fn=map_peak_pressure),  # 纵向扩展新增
 ]
 
 

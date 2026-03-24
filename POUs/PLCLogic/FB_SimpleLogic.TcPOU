@@ -69,11 +69,11 @@ ELSIF Input_Event.EType = EFF_IOT_CMD_RESET THEN
 
 ELSIF Input_Event.EType = EFF_SETPOINT_CHANGE THEN
 	IF Input_Event.Target = 'TempHighLimit' THEN
-		TempHighLimit := Input_Event.Value;
-		Final_Payload := CONCAT('TempHighLimit changed to ', REAL_TO_STRING(Input_Event.Value));
+		TempHighLimit := MIN(MAX(Input_Event.Value, 50.0), 100.0);
+		Final_Payload := CONCAT('TempHighLimit changed to ', REAL_TO_STRING(TempHighLimit));
 	ELSIF Input_Event.Target = 'TempLowLimit' THEN
-		TempLowLimit := Input_Event.Value;
-		Final_Payload := CONCAT('TempLowLimit changed to ', REAL_TO_STRING(Input_Event.Value));
+		TempLowLimit := MIN(MAX(Input_Event.Value, 40.0), 90.0);
+		Final_Payload := CONCAT('TempLowLimit changed to ', REAL_TO_STRING(TempLowLimit));
 	ELSE
 		Final_Payload := CONCAT('Unknown Setpoint: ', Input_Event.Target);
 	END_IF;

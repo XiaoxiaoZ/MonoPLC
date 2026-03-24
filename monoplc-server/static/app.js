@@ -181,6 +181,22 @@ document.getElementById('btn-spray-water').addEventListener('click', () => {
     fetch(`${API_BASE}/buttons/spray`, { method: 'POST' });
 });
 
+document.getElementById('btn-vent').addEventListener('click', () => {
+    fetch(`${API_BASE}/buttons/vent`, { method: 'POST' });
+});
+
+document.getElementById('btn-pressure-low').addEventListener('click', () => {
+    fetch(`${API_BASE}/buttons/pressure-setpoint?value=4.0`, { method: 'POST' });
+});
+
+document.getElementById('btn-pressure-mid').addEventListener('click', () => {
+    fetch(`${API_BASE}/buttons/pressure-setpoint?value=6.0`, { method: 'POST' });
+});
+
+document.getElementById('btn-pressure-high').addEventListener('click', () => {
+    fetch(`${API_BASE}/buttons/pressure-setpoint?value=8.0`, { method: 'POST' });
+});
+
 document.getElementById('btn-analyze').addEventListener('click', async () => {
     const btn = document.getElementById('btn-analyze');
     const icon = btn.querySelector('i');

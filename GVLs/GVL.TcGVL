@@ -4,7 +4,9 @@
     <Declaration><![CDATA[{attribute 'qualified_only'}
 VAR_GLOBAL
 	Net_ValveCmd : BOOL;
+	Net_VentValveCmd : BOOL;              // 泄压阀控制信号 (纵向扩展新增)
 	Net_Temperature : REAL;
+	Net_Pressure : REAL := 5.0;           // 压力传感器读数 (bar) (纵向扩展新增)
 	System_Time_UINT : ULINT;         // IEC 标准的日期时间类型 (Date and Time)
 
 	
@@ -28,6 +30,9 @@ VAR_GLOBAL
 	
 	// --- HMI 显示专用的日志数组 ---
 	HMI_Logs : ARRAY[1..5] OF STRING(255) := ['','','','',''];
+
+	// --- 溢出计数器 (Overflow Instrumentation) ---
+	Overflow_Count : UDINT := 0;  // 事件总线满时丢弃的 effect 计数
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>

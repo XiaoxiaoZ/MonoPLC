@@ -4,7 +4,8 @@
     <Declaration><![CDATA[PROGRAM Control_LOOP
 VAR
 	Inst_Logic     : FB_SimpleLogic;       // 纯净的温度业务逻辑
-	Inst_HumLogic  : FB_HumidityLogic;     // 纯净的湿度业务逻辑 (新增)
+	Inst_HumLogic  : FB_HumidityLogic;     // 纯净的湿度业务逻辑
+	Inst_PressureLogic : FB_PressureLogic; // 纯净的压力业务逻辑 (纵向扩展新增)
 	
 	Global_Climate : DUT_Climate_Monoid;   // 全局 Product Monoid (气候大一统状态)
 	Local_Climate  : DUT_Climate_Monoid;   // 局部 Product Monoid
@@ -26,10 +27,22 @@ VAR
 	// 时间戳生成相关
 	Sys_FileTime   : T_FILETIME;
 	Current_Time_Str_Val : STRING[32];
+
+	// --- 扫描周期自测计时 (Scan Cycle Self-Instrumentation) ---
+	t1 : LTIME;
+	t2 : LTIME;
+	Exec_Delta_ns : ULINT;
+	Exec_Time_us : LREAL;
+	Max_Exec_Time_us : LREAL := 0;
+	Avg_Exec_Sum : LREAL := 0;
+	Exec_Count : UDINT := 0;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// ==========================================
+      <ST><![CDATA[// === 计时开始 (LTIME = nanosecond resolution) ===
+t1 := LTIME();
+
+// ==========================================
 // 1. 采集环境事件 (Extract from external boundaries)
 // ==========================================
 // A. 将异步队列里的按键/外部网络命令，抽入本地事件总线
@@ -38,6 +51,8 @@ WHILE gvl.Async_Input_Head <> gvl.Async_Input_Tail DO
 	IF Next_Head <> Q_Tail THEN
 		Event_Bus_Queue[Q_Head] := gvl.Async_Input_Queue[gvl.Async_Input_Tail];
 		Q_Head := Next_Head;
+	ELSE
+		GVL.Overflow_Count := GVL.Overflow_Count + 1;
 	END_IF
 	gvl.Async_Input_Tail := (gvl.Async_Input_Tail + 1) MOD 100;
 END_WHILE;
@@ -86,6 +101,9 @@ WHILE Q_Tail <> Q_Head DO
 		IF Current_Event.Target = 'CoolingValve' THEN
 			GVL.Net_ValveCmd := (Current_Event.Value > 0.5);
 		END_IF;
+		IF Current_Event.Target = 'VentValve' THEN
+			GVL.Net_VentValveCmd := (Current_Event.Value > 0.5);
+		END_IF;
 	END_IF
 	
 	// 路由类型 3：业务逻辑计算 (The Brain Simulation)
@@ -103,16 +121,26 @@ WHILE Q_Tail <> Q_Head DO
 			Input_Event := Current_Event
 		);
 		
-		// 入参数湿度控制纯函数 (专为吸收加湿指令和自然蒸发环境而设计)
+		// 入参湿度控制纯函数 (专为吸收加湿指令和自然蒸发环境而设计)
 		Inst_HumLogic(
 			Input_Event := Current_Event
 		);
-		
+
+		// 入参压力控制纯函数 (纵向扩展新增 — 完全独立于温度和湿度)
+		Inst_PressureLogic(
+			Current_Pressure := GVL.Net_Pressure,
+			Current_Time_Str := Current_Time_Str_Val,
+			Input_Event := Current_Event
+		);
+
 		// 获取最新生成的结果代数
 		Total_Monoid := Inst_Logic.Effects_Out;
-		
-		Local_Climate.Temp := Inst_Logic.Effects_Out;
-		Local_Climate.Hum  := Inst_HumLogic.Effects_Out;
+		// 合并压力逻辑产生的 effects 到 Total_Monoid
+		Total_Monoid := FC_CombineEffects(Total_Monoid, Inst_PressureLogic.Effects_Out);
+
+		Local_Climate.Temp     := Inst_Logic.Effects_Out;
+		Local_Climate.Hum      := Inst_HumLogic.Effects_Out;
+		Local_Climate.Pressure := Inst_PressureLogic.Pressure_Out;  // 纵向扩展新增
 		
 		// 代数结合：合成大一统的气候状态字典
 		Global_Climate := FC_CombineClimate(Global_Climate, Local_Climate);
@@ -132,7 +160,17 @@ END_WHILE;
 // ==========================================
 // 当前循环完毕，所有的内部动作都已经消化干净或转移至别处理（物理/跨任务）
 // 系统将平静地等待下一个 PLC 扫描周期（下一毫秒）
-// ==========================================]]></ST>
+// ==========================================
+
+// === 计时结束 (LTIME = nanosecond resolution) ===
+t2 := LTIME();
+Exec_Delta_ns := LTIME_TO_ULINT(t2 - t1);
+Exec_Time_us := ULINT_TO_LREAL(Exec_Delta_ns) / 1000.0;  // ns -> us
+IF Exec_Time_us > Max_Exec_Time_us THEN
+	Max_Exec_Time_us := Exec_Time_us;
+END_IF
+Exec_Count := Exec_Count + 1;
+Avg_Exec_Sum := Avg_Exec_Sum + Exec_Time_us;]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
