@@ -28,19 +28,16 @@ VAR
 	Sys_FileTime   : T_FILETIME;
 	Current_Time_Str_Val : STRING[32];
 
-	// --- 扫描周期自测计时 (Scan Cycle Self-Instrumentation) ---
-	t1 : LTIME;
-	t2 : LTIME;
-	Exec_Delta_ns : ULINT;
-	Exec_Time_us : LREAL;
-	Max_Exec_Time_us : LREAL := 0;
-	Avg_Exec_Sum : LREAL := 0;
-	Exec_Count : UDINT := 0;
+	// --- PlcTaskSystemInfo 计时 (TE1300 Scope compatible) ---
+	TaskInfo : PlcTaskSystemInfo;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// === 计时开始 (LTIME = nanosecond resolution) ===
-t1 := LTIME();
+      <ST><![CDATA[// === Diagnostics: cycle start ===
+TaskInfo := _TaskInfo[1];  // Task index 1 = PlcTask (Control_LOOP)
+GVL.Diag_CycleCount := GVL.Diag_CycleCount + 1;
+GVL.Diag_EventBusDepth := (Q_Head - Q_Tail + 200) MOD 200;
+GVL.Diag_EventsThisCycle := 0;
 
 // ==========================================
 // 1. 采集环境事件 (Extract from external boundaries)
@@ -80,6 +77,7 @@ WHILE Q_Tail <> Q_Head DO
 	// Pop One Event
 	Current_Event := Event_Bus_Queue[Q_Tail];
 	Q_Tail := (Q_Tail + 1) MOD 200;
+	GVL.Diag_EventsThisCycle := GVL.Diag_EventsThisCycle + 1;
 	
 	// --- 事件路由 (The Router/Dispatcher) ---
 	
@@ -162,15 +160,11 @@ END_WHILE;
 // 系统将平静地等待下一个 PLC 扫描周期（下一毫秒）
 // ==========================================
 
-// === 计时结束 (LTIME = nanosecond resolution) ===
-t2 := LTIME();
-Exec_Delta_ns := LTIME_TO_ULINT(t2 - t1);
-Exec_Time_us := ULINT_TO_LREAL(Exec_Delta_ns) / 1000.0;  // ns -> us
-IF Exec_Time_us > Max_Exec_Time_us THEN
-	Max_Exec_Time_us := Exec_Time_us;
-END_IF
-Exec_Count := Exec_Count + 1;
-Avg_Exec_Sum := Avg_Exec_Sum + Exec_Time_us;]]></ST>
+// === Diagnostics: cycle end (PlcTaskSystemInfo.LastExecTime = 100ns units) ===
+GVL.Diag_CycleExecTime_us := UDINT_TO_LREAL(TaskInfo.LastExecTime) / 10.0;  // 100ns -> us
+IF GVL.Diag_CycleExecTime_us > GVL.Diag_MaxExecTime_us THEN
+	GVL.Diag_MaxExecTime_us := GVL.Diag_CycleExecTime_us;
+END_IF;]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

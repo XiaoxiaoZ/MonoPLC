@@ -33,6 +33,13 @@ VAR_GLOBAL
 
 	// --- 溢出计数器 (Overflow Instrumentation) ---
 	Overflow_Count : UDINT := 0;  // 事件总线满时丢弃的 effect 计数
+
+	// --- TE1300 Scope 诊断变量 (Timing Diagnostics) ---
+	Diag_CycleExecTime_us   : LREAL := 0.0;    // 上一 cycle 实际执行时间 (us)
+	Diag_EventsThisCycle    : INT := 0;         // 本 cycle 处理的事件数
+	Diag_EventBusDepth      : INT := 0;         // cycle 开始时队列深度
+	Diag_MaxExecTime_us     : LREAL := 0.0;     // 历史最大执行时间 (us)
+	Diag_CycleCount         : UDINT := 0;       // 累计 cycle 数
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>
