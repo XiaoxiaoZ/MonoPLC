@@ -26,7 +26,7 @@ For instance, this freedom allows us to easily implement a **Single-Threaded Asy
 ### Read more:
 
 Paper: 
-- [MonoPLC_Complete_Paper_v8.pdf]
+- (MonoPLC_Complete_Paper_v8.pdf)
 
 For a deep dive into the underlying mathematical representation, mapping algebraic combination laws to control execution, and the advantages of Idempotent state derivations:
 
