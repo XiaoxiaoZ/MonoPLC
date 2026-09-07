@@ -24,6 +24,10 @@ For instance, this freedom allows us to easily implement a **Single-Threaded Asy
 3. **Deterministic Logic Core**: Logic modules never directly read hardware sensors or delay timers. They only compute state transitions and consequences based on the popped events.
 
 ### Read more:
+
+Paper: 
+- [MonoPLC_Complete_Paper_v8.pdf]
+
 For a deep dive into the underlying mathematical representation, mapping algebraic combination laws to control execution, and the advantages of Idempotent state derivations:
 
 - [🇨🇳 架构设计深度解析 (Markdown)](MonoPLC_Architecture.md)
