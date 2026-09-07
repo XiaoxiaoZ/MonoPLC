@@ -27,6 +27,8 @@ For instance, this freedom allows us to easily implement a **Single-Threaded Asy
 
 📄 **[MonoPLC: Monoid Algebra as Architectural Constraints for Integrating Non-Real-Time Inputs in IEC 61131-3 PLC Control Systems](MonoPLC_Complete_Paper_v8.pdf)** — Xiaoxiao Zhang
 
+> **Preprint — not peer reviewed.** This is the author's own version, made available for early feedback. It has not been through journal or conference review, and the content may change before any formal publication. If you cite it, please cite it as a preprint (see [CITATION.cff](CITATION.cff)) and check back for a published version.
+
 ### Problem
 
 Industry 4.0 pushes IoT devices, AI services and operator panels into control loops that were never designed to accept them. The NAMUR Open Architecture (NOA) draws the line between Core Process Control (CPC), which must stay deterministic, and Monitoring & Optimization (M+O), which is everything non-real-time. NOA says M+O requests must be verified before they enter CPC, but it does not say how several M+O inputs should be *combined* once inside the runtime, or what should hold when one of them goes silent. Existing PLC work does not fill that gap either: object-oriented patterns and IEC 61499 structure components rather than constrain their composition, the Asset Administration Shell standardises the information model but not the algebra, and the algebraic PLC work that does exist (Šusta) is offline static analysis.
@@ -82,3 +84,22 @@ The paper claims feasibility and extensibility within IEC 61131-3, not industria
 
 Future plan:
 Now the moniod could collect and execute side effects but not natually mix them within the normal logic flow which means we can interupt the flow if side effect effects. Maybe monad can help.
+
+## Citation
+
+If you use this work, please cite the preprint. GitHub's "Cite this repository" button reads [CITATION.cff](CITATION.cff) and will generate BibTeX or APA for you.
+
+## License
+
+This repository carries two licenses, because it holds two different kinds of work.
+
+| What | License |
+| --- | --- |
+| Source code (`POUs/`, `DUTs/`, `GVLs/`, `VISUs/`, `monoplc-server/`, project files) | [Apache License 2.0](LICENSE) |
+| Paper, documentation and figures (the PDF, `*.md`, `*.svg`, `*.png`) | [CC BY 4.0](LICENSE-docs) |
+
+Apache 2.0 was chosen over MIT for the code because it grants an explicit patent licence, which matters in industrial automation. CC BY 4.0 on the written work asks only that you credit the author.
+
+The preprint status above applies to the CC BY grant as well: if the paper is later accepted for publication, the publisher's copyright and author posting policy takes precedence for the accepted or published version.
+
+The compiled libraries under `_Libraries/` are Beckhoff and CODESYS components redistributed with TwinCAT 3. They are **not** covered by the Apache License and remain the property of their owners. See [NOTICE](NOTICE) for details.

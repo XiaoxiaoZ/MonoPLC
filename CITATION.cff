@@ -1,0 +1,58 @@
+cff-version: 1.2.0
+title: MonoPLC
+message: >-
+  If you use this software or refer to the MonoPLC architecture,
+  please cite the preprint listed under preferred-citation.
+type: software
+authors:
+  - family-names: Zhang
+    given-names: Xiaoxiao
+repository-code: "https://github.com/XiaoxiaoZ/MonoPLC"
+abstract: >-
+  A side-effect-free, event-driven PLC architecture that enforces Monoid
+  axioms as architectural constraints, separating deterministic Core Process
+  Control from non-real-time Monitoring and Optimization inputs. Implemented
+  in TwinCAT 3 (IEC 61131-3 Structured Text) with a Python middleware layer.
+keywords:
+  - monoid algebra
+  - IEC 61131-3
+  - PLC architecture
+  - algebraic composition
+  - effect system
+  - TwinCAT
+  - industrial automation
+license: Apache-2.0
+preferred-citation:
+  type: article
+  status: preprint
+  title: >-
+    MonoPLC: Monoid Algebra as Architectural Constraints for Integrating
+    Non-Real-Time Inputs in IEC 61131-3 PLC Control Systems
+  authors:
+    - family-names: Zhang
+      given-names: Xiaoxiao
+  year: 2026
+  abstract: >-
+    Integrating non-real-time sources such as IoT devices and AI services into
+    IEC 61131-3 PLC control loops is a growing challenge in Industry 4.0.
+    Current approaches lack algebraic guarantees on how inputs from multiple
+    sources are composed at runtime. This paper presents MonoPLC, which
+    enforces Monoid axioms (closure, associativity, identity) as architectural
+    constraints. The architecture separates Core Process Control from
+    Monitoring and Optimization inputs using an Effect Monoid, a Product
+    Monoid for independent domain composition, and a Monoid Homomorphism for
+    cross-layer consistency. Validation on TwinCAT through mathematical
+    analysis, property-based testing, and a case study confirms that the
+    axioms hold within IEC 61131-3, new sources require zero modification to
+    core logic, source disconnection is handled without per-source conditional
+    logic, and cross-layer consistency is preserved.
+  keywords:
+    - monoid algebra
+    - IEC 61131-3
+    - PLC architecture
+    - algebraic composition
+    - effect system
+    - M+O integration
+  notes: >-
+    Preprint, not peer reviewed. Available at
+    https://github.com/XiaoxiaoZ/MonoPLC/blob/main/MonoPLC_Complete_Paper_v8.pdf

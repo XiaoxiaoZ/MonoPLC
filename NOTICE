@@ -1,0 +1,44 @@
+MonoPLC
+Copyright 2026 Xiaoxiao Zhang
+
+==============================================================================
+Licensing summary
+==============================================================================
+
+Source code -- Apache License 2.0 (see LICENSE)
+
+    POUs/            DUTs/            GVLs/           VISUs/
+    monoplc-server/  *.plcproj        *.TcTTO         *.TcVMO
+    *.TcGTLO
+
+Paper, documentation and figures -- Creative Commons Attribution 4.0
+International (see LICENSE-docs)
+
+    MonoPLC_Complete_Paper_v8.pdf
+    *.md  (except third-party or generated files)
+    MonoPLC_LLM_Monoid_Architecture.svg / .png
+    MonoPLC_LLM_Monoid_Architecture_EN.svg / .png
+
+The paper is a preprint. It has not been peer reviewed. If it is later
+accepted for publication, the publisher's copyright and author posting policy
+takes precedence over the CC BY 4.0 grant for the accepted or published
+version of that document.
+
+==============================================================================
+Third-party components
+==============================================================================
+
+The compiled libraries below are redistributed with the Beckhoff TwinCAT 3
+development environment. They are NOT covered by the Apache License 2.0 and
+remain the property of their respective owners.
+
+    _Libraries/Beckhoff Automation GmbH/Tc2_Standard/3.4.5.0
+    _Libraries/Beckhoff Automation GmbH/Tc2_System/3.10.1.0
+    _Libraries/Beckhoff Automation GmbH/Tc2_Utilities/3.10.1.0
+    _Libraries/Beckhoff Automation GmbH/Tc3_Module/3.4.5.0
+    _Libraries/System/VisuSymbols/4.5.0.0
+
+Their use is governed by the Beckhoff and CODESYS license terms that accompany
+a TwinCAT 3 installation. They are present in this repository only so that the
+project opens without manual library resolution; building and running the PLC
+code requires a valid TwinCAT 3 installation.
